@@ -8,6 +8,7 @@ import {
     Color4, 
     Camera} from "@babylonjs/core";
 
+import GUI from './GUI/gui';
 
 class App{
     _engine:Engine;
@@ -18,7 +19,9 @@ class App{
     constructor(){
         this._canvas = this.createCanvas();
         this._engine = new Engine(this._canvas,true);
-        this._scene = new Scene(this._engine);
+        const gui = new GUI(this._engine);
+        // this._scene = new Scene(this._engine);
+        this._scene = gui.scene;
 
         const camera = new ArcRotateCamera(
             "camera",
@@ -29,6 +32,9 @@ class App{
             this._scene);
 
         camera.attachControl(this._canvas,true);
+        camera.wheelDeltaPercentage = 0.02;
+        camera.setPosition(new Vector3(0,0,10));
+        
         /* eslint-disable */
         const light = new HemisphericLight(
             "light1",
@@ -36,13 +42,6 @@ class App{
             this._scene);
 
         /* eslint-disable */
-        const sphere:Mesh = MeshBuilder.CreateSphere(
-            "sphere",
-            {
-                diameter: 1
-            },
-            this._scene);
-        
         window.addEventListener("keydown",(evt)=>{
             if(evt.shiftKey && evt.ctrlKey && evt.altKey && evt.key === 'i'){
                 if(this._scene.debugLayer.isVisible()){
@@ -53,6 +52,7 @@ class App{
             }
         })
         
+        gui.draw();
         this._main();
     }
     createCanvas(){
