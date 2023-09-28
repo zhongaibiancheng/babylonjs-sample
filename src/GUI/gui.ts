@@ -1,7 +1,7 @@
-import { Engine, MeshBuilder, Scene,PBRSpecularGlossinessMaterial, Vector3, Color3, CubeTexture, Texture, ContainerAssetTask } from "@babylonjs/core";
+import { Engine, MeshBuilder, Scene,PBRSpecularGlossinessMaterial, Vector3, Color3, CubeTexture, Texture, ContainerAssetTask, SliderConstraint } from "@babylonjs/core";
 import { 
     AdvancedDynamicTexture,Rectangle, 
-    InputText,
+    InputText,Slider,
     Button,Container, Control,
     StackPanel,TextBlock } from "@babylonjs/gui";
 
@@ -92,6 +92,16 @@ export default class Gui{
         // gui.addControl(input);
 
 
-        
+        const slider = new Slider("slider");
+        slider.minimum = 0.2;
+        slider.maximum =3;
+        slider.width = "200px";
+        slider.height = "30px";
+        slider.value = 1;
+        slider.onValueChangedObservable.add(value=>{
+            torus.scaling.y = value;
+        })
+
+        gui.addControl(slider);
     }
 }
