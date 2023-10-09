@@ -59,16 +59,6 @@ export default class PlayerController{
         const light1 = new HemisphericLight("light",new Vector3(1,1,1),this._scene);
 
         this._inputMap = {};
-
-        const light = new PointLight("sparklight", new Vector3(0, 0, 0), this._scene);
-        light.diffuse = new Color3(0.08627450980392157, 0.10980392156862745, 0.15294117647058825);
-        light.intensity = 35;
-        light.radius = 1;
-    
-        this._shadowGenerator = new ShadowGenerator(1024, light);
-        this._shadowGenerator.darkness = 0.4;
-        
-        
         new AxesViewer(this._scene,4);
 
         const ground = MeshBuilder.CreateGround("ground",{width:30,height:30},this._scene);
@@ -158,7 +148,17 @@ export default class PlayerController{
         player.parent = outer;
         this._player = outer;
 
+        const light = new PointLight("sparklight", new Vector3(0, 0, 0), this._scene);
+        light.diffuse = new Color3(0.08627450980392157, 0.10980392156862745, 0.15294117647058825);
+        light.intensity = 35;
+        light.radius = 1;
+    
+        this._shadowGenerator = new ShadowGenerator(1024, light);
+        this._shadowGenerator.darkness = 0.4;
+        light.parent = this._player;
+        
         this._shadowGenerator.addShadowCaster(this._player);
+// this._scene.getMeshByName("sparklight").parent = this._player;
 
         this.loadAnimations();
         this._setUpAnimations();
