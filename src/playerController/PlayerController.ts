@@ -24,6 +24,8 @@ export default class PlayerController{
     private _player:AbstractMesh;
 
     private _inputMap:{};
+
+    private _weaponsMap:{};
     private _curAnim:AnimationGroup = null;
 
     private _preAnim:AnimationGroup = null;
@@ -31,6 +33,8 @@ export default class PlayerController{
     private _shadowGenerator:ShadowGenerator;
 
     private static readonly ANIMATION_NAME:Array<string>= ["Samba","Idle","Walking","WalkingBack"];
+
+    private static readonly WEAPONS:Array<string> = ["sword"];
 
     private static readonly PLAYER_MOVEMENT_SPEED:number = 0.08;
     private static readonly PLAYER_ROTATION_SPEED:number = 0.06;
@@ -45,6 +49,7 @@ export default class PlayerController{
         Engine.CollisionsEpsilon = 0.00005;
 
         this._animations = {};
+        this._weaponsMap = {};
         const canvas = document.getElementById("canvas") as HTMLCanvasElement;
         this._engine = new Engine(canvas);
         this._scene = new Scene(this._engine);
@@ -70,7 +75,11 @@ export default class PlayerController{
 
         ground.checkCollisions = true;
 
-        this.loadCharacter();
+        this.loadCharacter().then(()=>{
+
+            //load weapons
+            this._loadWeapons();
+        });
         
         this.inputController();
 
@@ -111,6 +120,19 @@ export default class PlayerController{
             const end_pos = new Vector3(pos.x-2,pos.y + 1, pos.z - 2);
             this._camRoot.position = Vector3.Lerp(this._camRoot.position,end_pos,0.4);
         }
+    }
+
+    private async _loadWeapons(){
+        const result = await SceneLoader.ImportMeshAsync(
+            null,
+            "/models/",
+            "sword.glb",
+            this._scene);
+        const sword = result.meshes[0];
+        this._weaponsMap['sword']=sword;
+        // sword.rotate(new Vector3(0,0,1),Math.PI/2.0);
+        sword.position.y = 1;
+        // sword.scaling.setAll(10);
     }
     /**
      * 
@@ -156,7 +178,7 @@ export default class PlayerController{
         this._shadowGenerator = new ShadowGenerator(1024, light);
         this._shadowGenerator.darkness = 0.4;
         light.parent = this._player;
-        
+
         this._shadowGenerator.addShadowCaster(this._player);
 // this._scene.getMeshByName("sparklight").parent = this._player;
 
