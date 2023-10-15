@@ -8,8 +8,14 @@
 // import PlayerController from './playerController/PlayerController';
 // const player = new PlayerController();
 
-import Sword from './playerController/sword';
-const s = new Sword();
+// import Sword from './playerController/sword';
+// const s = new Sword();
 
 // import Mat from './math/m';
 // const mm = new Mat();
+
+// import TrailMeshStudy from './playerController/TrailMeshStudy';
+// const trail = new TrailMeshStudy();
+
+import First from './shader/first';
+const first = new First();
