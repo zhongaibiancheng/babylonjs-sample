@@ -5,8 +5,8 @@
 // import CameraStudy  from "./camera/CameraStudy";
 // const camera = new CameraStudy();
 
-// import PlayerController from './playerController/PlayerController';
-// const player = new PlayerController();
+import PlayerController from './playerController/PlayerController';
+const player = new PlayerController();
 
 // import Sword from './playerController/sword';
 // const s = new Sword();
@@ -23,5 +23,5 @@
 // import ShaderCode from './shader/shaderCode';
 // const shade = new ShaderCode();
 
-import Demo from './demo/Demo';
-const demo = new Demo();
+// import Demo from './demo/Demo';
+// const demo = new Demo();

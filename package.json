@@ -13,12 +13,10 @@
   "license": "ISC",
   "husky": {
     "hooks": {
-        "pre-commit": "npm run lint"
+      "pre-commit": "npm run lint"
     }
   },
   "devDependencies": {
-    "@babylonjs/core": "^6.21.2",
-    "@babylonjs/inspector": "^6.21.2",
     "@typescript-eslint/eslint-plugin": "^6.7.2",
     "@typescript-eslint/parser": "^6.7.2",
     "eslint": "^8.50.0",
@@ -30,5 +28,10 @@
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^4.15.1"
+  },
+  "dependencies": {
+    "@babylonjs/core": "^6.24.0",
+    "@babylonjs/inspector": "^6.24.0",
+    "@babylonjs/materials": "^6.24.0"
   }
 }
