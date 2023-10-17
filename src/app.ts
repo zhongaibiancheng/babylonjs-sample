@@ -20,5 +20,8 @@
 // import First from './shader/first';
 // const first = new First();
 
-import ShaderCode from './shader/shaderCode';
-const shade = new ShaderCode();
+// import ShaderCode from './shader/shaderCode';
+// const shade = new ShaderCode();
+
+import Demo from './demo/Demo';
+const demo = new Demo();
