@@ -17,5 +17,8 @@
 // import TrailMeshStudy from './playerController/TrailMeshStudy';
 // const trail = new TrailMeshStudy();
 
-import First from './shader/first';
-const first = new First();
+// import First from './shader/first';
+// const first = new First();
+
+import ShaderCode from './shader/shaderCode';
+const shade = new ShaderCode();
