@@ -5,10 +5,11 @@ import { AbstractMesh, ActionManager,
     PointLight, 
     Ray, Texture,
     Scene, SceneLoader, ShadowGenerator, StandardMaterial,TransformNode, 
-    UniversalCamera, Vector3, _PrimaryIsoTriangle, CubeTexture, Vector2, PickingInfo, NodeMaterial } from "@babylonjs/core";
+    UniversalCamera, Vector3, _PrimaryIsoTriangle, CubeTexture, Vector2, PickingInfo, NodeMaterial, Quaternion } from "@babylonjs/core";
 
 
-import { SkyMaterial, TerrainMaterial, WaterMaterial } from '@babylonjs/materials';
+import { SkyMaterial, TerrainMaterial, WaterMaterial } from 
+'@babylonjs/materials';
 import "@babylonjs/loaders/glTF";
 
 const SIZE = {
@@ -23,8 +24,8 @@ export default class PlayerController{
     _emitter:Mesh;
     _rocket:ParticleSystem;
 
-    _camera:UniversalCamera;
-    // _camera:ArcRotateCamera;
+    // _camera:UniversalCamera;
+    _camera:ArcRotateCamera;
     _camRoot:TransformNode;
     _yTilt:TransformNode;
 
@@ -50,7 +51,6 @@ export default class PlayerController{
 
     private static readonly GRAVITY:Vector3 = new Vector3(0,-0.098,0);
 
-
     // private static readonly ORIGINAL_TILT: Vector3 = new Vector3(Math.PI/4.0, 0, 0);
 
     constructor(){
@@ -64,7 +64,6 @@ export default class PlayerController{
 
         this._scene.collisionsEnabled = true;
 
-        // this._scene.clearColor = new Color4(1,1,1,0.2);
         this._scene.clearColor = new Color4(0.01568627450980392, 0.01568627450980392, 0.20392156862745098); // a color that fit the overall color scheme better
 
         this._scene.actionManager = new ActionManager(this._scene);
@@ -73,8 +72,6 @@ export default class PlayerController{
 
         this._inputMap = {};
         new AxesViewer(this._scene,4);
-
-        this._createTerrainGround();
 
         // Sky material
         var skyboxMaterial = new SkyMaterial("skyMaterial", this._scene);
@@ -85,17 +82,14 @@ export default class PlayerController{
         var skybox = Mesh.CreateBox("skyBox", 1000.0, this._scene);
         skybox.material = skyboxMaterial;
 
-        // this._createWater(skybox,this._ground);
         this._main();
 
-        this.loadCharacter().then(()=>{
-            //load weapons
-            // this._loadWeapons();
-        });
+        // this.loadCharacter().then(()=>{
+        //     //load weapons
+        //     // this._loadWeapons();
+        // });
         
         this.inputController();
-
-        this._main();
 
         this._scene.registerBeforeRender(()=>{
             this._updateCamera();
@@ -104,148 +98,8 @@ export default class PlayerController{
         window.addEventListener("resize",(evt)=>{
             this._engine.resize();
         });
-        // load the shattered mesh obj and start animation when it's done
-    SceneLoader.Append("./models/", "object.obj", this._scene, (scene) => {
-        scene.meshes[3].setEnabled(false);
-        console.log(scene.meshes)
-        NodeMaterial.ParseFromSnippetAsync("K3DE99#10", scene).then(nodeMaterial => {
-            // get the uniform Time that is used to animate the shattering
-            var time = nodeMaterial.getInputBlockByPredicate(
-                b => b.name === "Time");
-            setTimeout(function(){
-                // when the cube touches the ground, hide the box and show the shattered mesh
-                scene.meshes[3].material = nodeMaterial;
-                scene.meshes[3].setEnabled(true);
-                cube.setEnabled(false);
-                cubeMirror.setEnabled(false);
-                time.value = 0;
-                var mirror = scene.meshes[3].clone();
-                mirror.scaling = new BABYLON.Vector3(1,-1,1);
-            }, 1337);
-
-            scene.registerBeforeRender(function(){
-                // animate the falling cube and its mirror version. Increase time
-                cube.position.y = 9.0 - 0.2 * (time.value * 10)  * (time.value * 10);
-                cube.rotation.x += 0.1;
-                cubeMirror.position.y = -cube.position.y;
-                cubeMirror.rotation.x = -cube.rotation.x;
-                time.value += 0.008;
-            });
-        });
-    
     }
-    //TODO
-    _createWater(skybox,ground){
-        // Water
-        var waterMesh = Mesh.CreateGround("waterMesh", 512, 512, 32, this._scene, false);
-        
-        waterMesh.position.y = -15;
-        var water = new WaterMaterial("water", this._scene);
-        water.bumpTexture = new Texture("textures/waterbump.png", this._scene);
-        
-        // Water properties
-        water.windForce = -15;
-        water.waveHeight = 1.3;
-        water.windDirection = new Vector2(1, 1);
-        water.waterColor = new Color3(0.1, 0.1, 0.6);
-        water.colorBlendFactor = 0.3;
-        water.bumpHeight = 0.1;
-        water.waveLength = 0.1;
-        
-        // Add skybox and ground to the reflection and refraction
-        water.addToRenderList(skybox);
-        water.addToRenderList(ground);
-        
-        // Assign the water material
-        waterMesh.material = water;
-    }
-    _createTerrainGround(){
-        // // Create terrain material
-        var terrainMaterial = new TerrainMaterial("terrainMaterial", this._scene);
-        terrainMaterial.specularColor = new Color3(0.5, 0.5, 0.5);
-        terrainMaterial.specularPower = 64;
-        
-        // Set the mix texture (represents the RGB values)
-        terrainMaterial.mixTexture = new Texture("textures/mixMap.png", this._scene);
-        
-        // Diffuse textures following the RGB values of the mix map
-        // diffuseTexture1: Red
-        // diffuseTexture2: Green
-        // diffuseTexture3: Blue
-        terrainMaterial.diffuseTexture1 = new Texture("textures/floor.png", this._scene);
-        terrainMaterial.diffuseTexture2 = new Texture("textures/rock.png", this._scene);
-        terrainMaterial.diffuseTexture3 = new Texture("textures/grass.png", this._scene);
-        
-        // Bump textures according to the previously set diffuse textures
-        terrainMaterial.bumpTexture1 = new Texture("textures/floor_bump.png", this._scene);
-        terrainMaterial.bumpTexture2 = new Texture("textures/rockn.png", this._scene);
-        terrainMaterial.bumpTexture3 = new Texture("textures/grassn.png", this._scene);
     
-        // Rescale textures according to the terrain
-        terrainMaterial.diffuseTexture1.uScale = terrainMaterial.diffuseTexture1.vScale = 1;
-        terrainMaterial.diffuseTexture2.uScale = terrainMaterial.diffuseTexture2.vScale = 1;
-        terrainMaterial.diffuseTexture3.uScale = terrainMaterial.diffuseTexture3.vScale = 1;
-        
-        // Ground
-        this._ground = Mesh.CreateGroundFromHeightMap("ground", "textures/heightMap.png", SIZE.width, SIZE.height, 100, 0, 10, this._scene, false);
-        // ground.position.y = -2.05;
-        this._ground.position.y = 0;
-        this._ground.material = terrainMaterial;
-
-        this._ground.isPickable = true;
-        this._ground.checkCollisions = false;
-        // ground.scaling.set(100,1,100);
-
-        const texture = new Texture("textures/grass.png", this._scene);
-        const materail = new StandardMaterial("ground",this._scene);
-        materail.diffuseTexture = texture;
-
-        const positions = [
-            {
-                x:-SIZE.width,
-                z:SIZE.height
-            },
-            {
-                x:0,
-                z:SIZE.height
-            },
-            {
-                x:SIZE.width,
-                z:SIZE.height
-            },
-            {
-                x:-SIZE.width,
-                z:0
-            },
-            {
-                x:SIZE.width,
-                z:0
-            },
-            {
-                x:-SIZE.width,
-                z:-SIZE.height
-            },
-            {
-                x:0,
-                z:-SIZE.height
-            },
-            {
-                x:SIZE.width,
-                z:-SIZE.height
-            }
-        ];
-        for(let i=0;i<positions.length;i++){
-            let gr = MeshBuilder.CreateGround(
-                "ground3"+i,{width:SIZE.width,height:SIZE.height},this._scene);
-            gr.position.z = positions[i].z;
-            gr.position.x = positions[i].x;
-            gr.material = materail;
-
-            gr.isPickable = true;
-            gr.checkCollisions = false;
-    
-        }
-    }
 
     private _setupPlayerCamera(){
         this._camRoot = new TransformNode("root",this._scene);
@@ -258,14 +112,14 @@ export default class PlayerController{
         yTilt.parent = this._camRoot;
         this._yTilt = yTilt;
 
-        // this._camera = new ArcRotateCamera("camera1",  0, 0, 0, new Vector3(0, 0, 0), this._scene);
-        // this._camera.setPosition(new Vector3(0, 5, -30));
+        this._camera = new ArcRotateCamera("camera1",  0, 0, 0, new Vector3(0, 0, 0), this._scene);
+        this._camera.setPosition(new Vector3(0, 5, -30));
 
-        // this._camera.attachControl(true);
-        // this._camera.wheelDeltaPercentage = 0.02;
+        this._camera.attachControl(true);
+        this._camera.wheelDeltaPercentage = 0.02;
 
         // our actual camera that's pointing at our root's position
-        this._camera = new UniversalCamera("cam", new Vector3(0, 0, -20), this._scene);
+        // this._camera = new UniversalCamera("cam", new Vector3(0, 0, -20), this._scene);
         this._camera.lockedTarget = this._camRoot.position;
         this._camera.fov = 0.47350045992678597;
         this._camera.parent = yTilt;
@@ -281,83 +135,121 @@ export default class PlayerController{
         }
     }
 
-    private async _loadWeapons(){
-        const result = await SceneLoader.ImportMeshAsync(
-            null,
-            "/models/",
-            "sword.glb",
-            this._scene);
-        const sword = result.meshes[0];
-        this._weaponsMap['sword']=sword;
-        // sword.rotate(new Vector3(0,0,1),Math.PI/2.0);
-        sword.position.y = 1;
-        // sword.scaling.setAll(10);
-    }
-    /**
-     * 
-     * 加载player model 和 动画
-     * 
-     */
-    private async loadCharacter(){
-        const result = await SceneLoader.ImportMeshAsync(null,
-        "/models/",
-        "HVGirl.glb",this._scene);
+//     private async _loadWeapons(){
+//         const result = await SceneLoader.ImportMeshAsync(
+//             null,
+//             "/models/",
+//             "sword.glb",
+//             this._scene);
+//         const sword = result.meshes[0];
+//         this._weaponsMap['sword']=sword;
+//         // sword.rotate(new Vector3(0,0,1),Math.PI/2.0);
+//         sword.position.y = 1;
+//         // sword.scaling.setAll(10);
+//     }
+//     /**
+//      * 
+//      * 加载player model 和 动画
+//      * 
+//      */
+//     private async loadCharacter(){
+//         const result = await SceneLoader.ImportMeshAsync(null,
+//         "/models/",
+//         "HVGirl.glb",this._scene);
 
-        const player = result.meshes[0];
+//         const player = result.meshes[0];
         
-        const outer = MeshBuilder.CreateBox("outer",{
-            width:0.8,
-            height:2.2,
-            depth:0.8
-        },this._scene);
+//         const outer = MeshBuilder.CreateBox("outer",{
+//             width:0.8,
+//             height:2.2,
+//             depth:0.8
+//         },this._scene);
 
-        outer.position.y = 11;
-        outer.bakeTransformIntoVertices(Matrix.Translation(0, 1.1, 0))
-        outer.ellipsoid = new Vector3(0.4, 1.1, 0.4);
-        outer.ellipsoidOffset = new Vector3(0, 1.1, 0);
+//         outer.position.y = 11;
+//         outer.bakeTransformIntoVertices(Matrix.Translation(0, 1.1, 0))
+//         outer.ellipsoid = new Vector3(0.4, 1.1, 0.4);
+//         outer.ellipsoidOffset = new Vector3(0, 1.1, 0);
 
-        outer.checkCollisions = true;
-        outer.isPickable = false;
-        outer.isVisible = false;
+//         outer.checkCollisions = true;
+//         outer.isPickable = false;
+//         outer.isVisible = false;
 
-        player.scaling.setAll(0.1);
-        player.rotate(Vector3.Up(),Math.PI);
-        player.getChildMeshes().forEach((child)=>{
-            child.isPickable = false;
-            child.checkCollisions = false;
-        });
-        player.parent = outer;
-        this._player = outer;
+//         player.scaling.setAll(0.1);
+//         player.rotate(Vector3.Up(),Math.PI);
+//         player.getChildMeshes().forEach((child)=>{
+//             child.isPickable = false;
+//             child.checkCollisions = false;
+//         });
+//         player.parent = outer;
+//         this._player = outer;
 
-        const light = new PointLight("sparklight", new Vector3(0, 0, 0), this._scene);
-        light.diffuse = new Color3(0.08627450980392157, 0.10980392156862745, 0.15294117647058825);
-        light.intensity = 35;
-        light.radius = 1;
+//         const light = new PointLight("sparklight", new Vector3(0, 0, 0), this._scene);
+//         light.diffuse = new Color3(0.08627450980392157, 0.10980392156862745, 0.15294117647058825);
+//         light.intensity = 35;
+//         light.radius = 1;
     
-        this._shadowGenerator = new ShadowGenerator(1024, light);
-        this._shadowGenerator.darkness = 0.4;
-        light.parent = this._player;
+//         this._shadowGenerator = new ShadowGenerator(1024, light);
+//         this._shadowGenerator.darkness = 0.4;
+//         light.parent = this._player;
 
-        this._shadowGenerator.addShadowCaster(this._player);
-// this._scene.getMeshByName("sparklight").parent = this._player;
+//         this._shadowGenerator.addShadowCaster(this._player);
+// // this._scene.getMeshByName("sparklight").parent = this._player;
 
-        this.loadAnimations();
-        this._setUpAnimations();
+//         this.loadAnimations();
+//         this._setUpAnimations();
+//     }
+//     private loadAnimations(){
+//         for(let name of PlayerController.ANIMATION_NAME){
+//             const animation = this._scene.getAnimationGroupByName(name);
+//             this._animations[name] = animation;
+//         }
+//     }
+
+    private async _loadModel(){
+        const result = await SceneLoader.ImportMeshAsync(
+            '',
+            '/scene/',
+            'scene.glb',
+            this._scene);
+        const scene = result.meshes[0];
+
+        //player
+        const result_ = await SceneLoader.ImportMeshAsync(
+            "",
+            "/models/",
+            "player.glb",
+            this._scene);
+
+        const root = result_.meshes[0];
+        const animations = result_.animationGroups;
+        //body is our actual player mesh
+        const body = root;
+
+        //collision mesh
+        const outer = MeshBuilder.CreateBox("outer", { width: 2, depth: 1, height: 3 }, this._scene);
+        outer.isVisible = true;
+        outer.isPickable = false;
+        outer.checkCollisions = true;
+
+        //move origin of box collider to the bottom of the mesh (to match player mesh)
+        outer.bakeTransformIntoVertices(Matrix.Translation(0, 1.5, 0))
+
+        //for collisions
+        outer.ellipsoid = new Vector3(1, 1.5, 1);
+        outer.ellipsoidOffset = new Vector3(0, 1.5, 0);
+
+        // outer.rotationQuaternion = new Quaternion(0, 1, 0, 0); // rotate the player mesh 180 since we want to see the back of the player
+
+        body.isPickable = false; //so our raycasts dont hit ourself
+        body.getChildMeshes().forEach(m => {
+            m.isPickable = false;
+        });
+        body.parent = outer;
+        const position = this._scene.getTransformNodeByName("startPosition").getAbsolutePosition();
+        console.log(position);
+        outer.position = position;
     }
-    private loadAnimations(){
-        for(let name of PlayerController.ANIMATION_NAME){
-            const animation = this._scene.getAnimationGroupByName(name);
-            this._animations[name] = animation;
-        }
-    }
 
-    private _loadModel():void{
-        const wall1 = MeshBuilder.CreateBox("wall1",{width:4,height:2,depth:0.4},this._scene);
-        wall1.position = new Vector3(3,1,0);
-
-        wall1.checkCollisions = true;
-
-    }
     private inputController(){
         this._scene.actionManager.registerAction(
             new ExecuteCodeAction(ActionManager.OnKeyDownTrigger,(evt)=>{
@@ -382,6 +274,7 @@ export default class PlayerController{
         this._curAnim = this._animations['Idle'];
         this._preAnim = null;
     }
+
     private _isFloor(offsetX:number,offsetY:number,offsetZ:number,distance):PickingInfo{
         const p_pos = this._player.position;
         const pos = new Vector3(
@@ -401,6 +294,7 @@ export default class PlayerController{
         const result = this._isFloor(0,0.5,0,0.6);
         return result && result.hit;
     }
+
     _main():void{
         this._engine.runRenderLoop(()=>{
             this._scene.render();
