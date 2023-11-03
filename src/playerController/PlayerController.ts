@@ -7,10 +7,11 @@ import { AbstractMesh, ActionManager,
     Scene, SceneLoader, ShadowGenerator, StandardMaterial,TransformNode, 
     UniversalCamera, Vector3, _PrimaryIsoTriangle, CubeTexture, Vector2, PickingInfo, NodeMaterial, Quaternion } from "@babylonjs/core";
 
-
 import { SkyMaterial, TerrainMaterial, WaterMaterial } from 
 '@babylonjs/materials';
 import "@babylonjs/loaders/glTF";
+
+import InputController from './inputController';
 
 const SIZE = {
     width:100,
@@ -18,7 +19,41 @@ const SIZE = {
     depth:100
 }
 
-export default class PlayerController{
+export default class PlayerController {
+// extends TransformNode{
+    private static readonly DASH_TIME:number = 10; //how many frames the dash lasts
+    private static readonly DASH_FACTOR: number = 2.5;
+    private static readonly JUMP_FORCE: number = 0.80;
+    private static readonly GRAVITY: number = -2.8;
+
+    private _idle:AnimationGroup;
+    private _jump:AnimationGroup;
+    private _run:AnimationGroup;
+    private _land:AnimationGroup;
+    private _dash:AnimationGroup;
+
+    private _preAnims:AnimationGroup;
+    private _curAnims:AnimationGroup;
+
+    private _dashPressed:boolean = false;
+    private _isFalling:boolean = false;
+    private _jumped:boolean = false;
+    private _grounded:boolean = false;
+
+    private _input:InputController;
+
+    private _gravity:Vector3 = new Vector3(0,-0.0098,0);
+
+    private _h:number;
+    private _v:number;
+    private _inputAmt: number;
+    private _moveDirection:Vector3 = new Vector3();
+    private _delta_time:number = 0;
+    private _canDash:boolean = false;
+    public dashTime:number = 0;
+
+    private _lastGroundPos:Vector3 = Vector3.Zero();
+    private _jumpCount:number = 0;
     _engine:Engine;
     _scene:Scene;
     _emitter:Mesh;
@@ -28,6 +63,9 @@ export default class PlayerController{
     _camera:ArcRotateCamera;
     _camRoot:TransformNode;
     _yTilt:TransformNode;
+
+    //Player
+    public mesh: Mesh; //outer collisionbox of player
 
     private _animations:{};
     private _player:AbstractMesh;
@@ -49,12 +87,13 @@ export default class PlayerController{
     private static readonly PLAYER_ROTATION_SPEED:number = 0.06;
     private static readonly ORIGINAL_TILT: Vector3 = new Vector3(0.5934119456780721, 0, 0);
 
-    private static readonly GRAVITY:Vector3 = new Vector3(0,-0.098,0);
+    // private static readonly GRAVITY:Vector3 = new Vector3(0,-0.098,0);
 
     // private static readonly ORIGINAL_TILT: Vector3 = new Vector3(Math.PI/4.0, 0, 0);
 
     constructor(){
-        Engine.CollisionsEpsilon = 0.00005;
+        // super("scene_test_");
+        Engine.CollisionsEpsilon = 0.000005;
 
         this._animations = {};
         this._weaponsMap = {};
@@ -71,6 +110,9 @@ export default class PlayerController{
         const light1 = new HemisphericLight("light",new Vector3(1,1,1),this._scene);
 
         this._inputMap = {};
+
+        this._input = new InputController(this._scene);
+
         new AxesViewer(this._scene,4);
 
         // Sky material
@@ -84,15 +126,13 @@ export default class PlayerController{
 
         this._main();
 
-        // this.loadCharacter().then(()=>{
-        //     //load weapons
-        //     // this._loadWeapons();
-        // });
-        
         this.inputController();
 
         this._scene.registerBeforeRender(()=>{
+            this._updateFromControll();
+            this._updateGroundDetection();
             this._updateCamera();
+            this._animatePlayer();
         });
 
         window.addEventListener("resize",(evt)=>{
@@ -100,7 +140,6 @@ export default class PlayerController{
         });
     }
     
-
     private _setupPlayerCamera(){
         this._camRoot = new TransformNode("root",this._scene);
         this._camRoot.position = new Vector3(0,0,0);
@@ -127,83 +166,82 @@ export default class PlayerController{
         this._scene.activeCamera = this._camera;
     }
 
+    private _updateFromControll():void{
+        if(!this.mesh){
+            return;
+        }
+        this._delta_time = this._scene.getEngine().getDeltaTime()/1000.0;
+        this._h = this._input.horizontal;
+        this._v = this._input.vertical;
+
+        this._moveDirection = Vector3.Zero();
+
+        //--DASHING--
+        //limit dash to once per ground/platform touch
+        //can only dash when in the air
+        if (this._input.dashing && !this._dashPressed && this._canDash && !this._grounded) {
+            this._canDash = false;
+            this._dashPressed = true;
+    
+            //sfx and animations
+            this._curAnims = this._dash;
+        }
+
+        let dashFactor = 1;
+        //if you're dashing, scale movement
+        if (this._dashPressed) {
+            if (this.dashTime > PlayerController.DASH_TIME) {
+                this.dashTime = 0;
+                this._dashPressed = false;
+            } else {
+                dashFactor = PlayerController.DASH_FACTOR;
+            }
+            this.dashTime++;
+        }
+
+        let fwd = this._camRoot.forward;
+        let right = this._camRoot.right;
+
+        let fwd_vec3  = fwd.scaleInPlace(this._v);
+        let right_vec3 = right.scaleInPlace(this._h);
+
+        let dir = fwd_vec3.addInPlace(right_vec3);
+        let dir_nor = dir.normalize();
+
+        this._moveDirection = new Vector3(dir_nor.x,0,dir_nor.z);
+
+        this._inputAmt = Math.abs(this._h) + Math.abs(this._v);
+        if(this._inputAmt > 1){
+            this._inputAmt = 1;
+        }
+
+        this._moveDirection.scaleInPlace(this._inputAmt * PlayerController.PLAYER_MOVEMENT_SPEED);
+
+        //检查是否旋转
+        let rot = new Vector3(this._input.horizontalAxis,0,this._input.verticalAxis);
+        if(rot.length() === 0){
+            return;
+        }
+
+        let angle = Math.atan2(this._input.horizontalAxis,this._input.verticalAxis);
+        angle +=this._camRoot.rotation.y ;
+        let targ = Quaternion.FromEulerAngles(0, angle, 0);
+
+        this.mesh.rotationQuaternion = Quaternion.Slerp(
+            this.mesh.rotationQuaternion,
+            targ,
+            10*this._delta_time);
+
+        return;
+    }
+
     private _updateCamera(){
-        if(this._player){
-            const pos = this._player.position;
+        if(this.mesh){
+            const pos = this.mesh.position;
             const end_pos = new Vector3(pos.x-2,pos.y + 1, pos.z - 2);
             this._camRoot.position = Vector3.Lerp(this._camRoot.position,end_pos,0.4);
         }
     }
-
-//     private async _loadWeapons(){
-//         const result = await SceneLoader.ImportMeshAsync(
-//             null,
-//             "/models/",
-//             "sword.glb",
-//             this._scene);
-//         const sword = result.meshes[0];
-//         this._weaponsMap['sword']=sword;
-//         // sword.rotate(new Vector3(0,0,1),Math.PI/2.0);
-//         sword.position.y = 1;
-//         // sword.scaling.setAll(10);
-//     }
-//     /**
-//      * 
-//      * 加载player model 和 动画
-//      * 
-//      */
-//     private async loadCharacter(){
-//         const result = await SceneLoader.ImportMeshAsync(null,
-//         "/models/",
-//         "HVGirl.glb",this._scene);
-
-//         const player = result.meshes[0];
-        
-//         const outer = MeshBuilder.CreateBox("outer",{
-//             width:0.8,
-//             height:2.2,
-//             depth:0.8
-//         },this._scene);
-
-//         outer.position.y = 11;
-//         outer.bakeTransformIntoVertices(Matrix.Translation(0, 1.1, 0))
-//         outer.ellipsoid = new Vector3(0.4, 1.1, 0.4);
-//         outer.ellipsoidOffset = new Vector3(0, 1.1, 0);
-
-//         outer.checkCollisions = true;
-//         outer.isPickable = false;
-//         outer.isVisible = false;
-
-//         player.scaling.setAll(0.1);
-//         player.rotate(Vector3.Up(),Math.PI);
-//         player.getChildMeshes().forEach((child)=>{
-//             child.isPickable = false;
-//             child.checkCollisions = false;
-//         });
-//         player.parent = outer;
-//         this._player = outer;
-
-//         const light = new PointLight("sparklight", new Vector3(0, 0, 0), this._scene);
-//         light.diffuse = new Color3(0.08627450980392157, 0.10980392156862745, 0.15294117647058825);
-//         light.intensity = 35;
-//         light.radius = 1;
-    
-//         this._shadowGenerator = new ShadowGenerator(1024, light);
-//         this._shadowGenerator.darkness = 0.4;
-//         light.parent = this._player;
-
-//         this._shadowGenerator.addShadowCaster(this._player);
-// // this._scene.getMeshByName("sparklight").parent = this._player;
-
-//         this.loadAnimations();
-//         this._setUpAnimations();
-//     }
-//     private loadAnimations(){
-//         for(let name of PlayerController.ANIMATION_NAME){
-//             const animation = this._scene.getAnimationGroupByName(name);
-//             this._animations[name] = animation;
-//         }
-//     }
 
     private async _loadModel(){
         const result = await SceneLoader.ImportMeshAsync(
@@ -211,7 +249,38 @@ export default class PlayerController{
             '/scene/',
             'scene.glb',
             this._scene);
-        const scene = result.meshes[0];
+        // const scene = result.meshes[0];
+
+        const env = result.meshes[0];
+
+        const allMeshes = env.getChildMeshes();
+
+        allMeshes.forEach(m=>{
+            m.checkCollisions = true;
+            m.receiveShadows = true;
+
+            if(m.name === 'ground'){
+                m.isPickable = true;
+                m.checkCollisions = true;
+            }
+
+            if(m.name.includes("collision")){
+                m.isPickable = true;
+                m.isVisible = false;
+            }
+
+            if(m.name.includes("Trigger")){
+                m.isVisible = true;
+                m.checkCollisions = false;
+                m.isPickable = false;
+            }
+
+            //areas that will use box collisions
+            if (m.name.includes("stairs") || m.name == "cityentranceground" || m.name == "fishingground.001" || m.name.includes("lilyflwr")) {
+                m.checkCollisions = false;
+                m.isPickable = false;
+            }
+        });
 
         //player
         const result_ = await SceneLoader.ImportMeshAsync(
@@ -222,12 +291,23 @@ export default class PlayerController{
 
         const root = result_.meshes[0];
         const animations = result_.animationGroups;
+
+        this._idle = animations[1];
+        this._land = animations[3];
+        this._jump = animations[2];
+        this._run = animations[4];
+        this._dash = animations[0];
+
+        this._curAnims = this._idle;
+        this._preAnims = this._idle;
+        this._preAnims.play(this._preAnims.loopAnimation);
+
         //body is our actual player mesh
         const body = root;
 
         //collision mesh
         const outer = MeshBuilder.CreateBox("outer", { width: 2, depth: 1, height: 3 }, this._scene);
-        outer.isVisible = true;
+        outer.isVisible = false;
         outer.isPickable = false;
         outer.checkCollisions = true;
 
@@ -238,7 +318,7 @@ export default class PlayerController{
         outer.ellipsoid = new Vector3(1, 1.5, 1);
         outer.ellipsoidOffset = new Vector3(0, 1.5, 0);
 
-        // outer.rotationQuaternion = new Quaternion(0, 1, 0, 0); // rotate the player mesh 180 since we want to see the back of the player
+        outer.rotationQuaternion = new Quaternion(0, 0, 0, 0); // rotate the player mesh 180 since we want to see the back of the player
 
         body.isPickable = false; //so our raycasts dont hit ourself
         body.getChildMeshes().forEach(m => {
@@ -246,10 +326,144 @@ export default class PlayerController{
         });
         body.parent = outer;
         const position = this._scene.getTransformNodeByName("startPosition").getAbsolutePosition();
-        console.log(position);
-        outer.position = position;
-    }
 
+        outer.position = position;
+
+        this.mesh = outer;
+
+        // this.mesh.parent = this;
+        this.mesh.actionManager = new ActionManager(this._scene);
+
+        this.mesh.actionManager.registerAction(new ExecuteCodeAction({
+            trigger:ActionManager.OnIntersectionEnterTrigger,
+            parameter:this._scene.getMeshByName("ground")
+        },()=>{
+            if(this.mesh && this._lastGroundPos){
+                this.mesh.position.copyFrom(this._lastGroundPos);
+            }
+        }));
+        // this._setUpAnimations();
+    }
+    private _checkSlope(): boolean {
+        if(!this.mesh){
+            return false;
+        }
+        //only check meshes that are pickable and enabled (specific for collision meshes that are invisible)
+        let predicate = function (mesh) {
+            return mesh.isPickable && mesh.isEnabled();
+        }
+
+        //4 raycasts outward from center
+        let raycast = new Vector3(this.mesh.position.x, this.mesh.position.y + 0.5, this.mesh.position.z + .25);
+        let ray = new Ray(raycast, Vector3.Up().scale(-1), 1.5);
+        let pick = this._scene.pickWithRay(ray, predicate);
+
+        let raycast2 = new Vector3(this.mesh.position.x, this.mesh.position.y + 0.5, this.mesh.position.z - .25);
+        let ray2 = new Ray(raycast2, Vector3.Up().scale(-1), 1.5);
+        let pick2 = this._scene.pickWithRay(ray2, predicate);
+
+        let raycast3 = new Vector3(this.mesh.position.x + .25, this.mesh.position.y + 0.5, this.mesh.position.z);
+        let ray3 = new Ray(raycast3, Vector3.Up().scale(-1), 1.5);
+        let pick3 = this._scene.pickWithRay(ray3, predicate);
+
+        let raycast4 = new Vector3(this.mesh.position.x - .25, this.mesh.position.y + 0.5, this.mesh.position.z);
+        let ray4 = new Ray(raycast4, Vector3.Up().scale(-1), 1.5);
+        let pick4 = this._scene.pickWithRay(ray4, predicate);
+
+        if (pick.hit && !pick.getNormal().equals(Vector3.Up())) {
+            if(pick.pickedMesh.name.includes("stair")) { 
+                return true; 
+            }
+        } else if (pick2.hit && !pick2.getNormal().equals(Vector3.Up())) {
+            if(pick2.pickedMesh.name.includes("stair")) { 
+                return true; 
+            }
+        }
+        else if (pick3.hit && !pick3.getNormal().equals(Vector3.Up())) {
+            if(pick3.pickedMesh.name.includes("stair")) { 
+                return true; 
+            }
+        }
+        else if (pick4.hit && !pick4.getNormal().equals(Vector3.Up())) {
+            if(pick4.pickedMesh.name.includes("stair")) { 
+                return true; 
+            }
+        }
+        return false;
+    }
+    private _updateGroundDetection(): void {
+        if(!this.mesh){
+            return;
+        }
+        const is_ground = this._isGrounded();
+
+        if (!is_ground) {
+            if (this._checkSlope() && this._gravity.y <= 0) {
+                //if you are considered on a slope, you're able to jump and gravity wont affect you
+                this._gravity.y = 0;
+                this._jumpCount = 1;
+                this._grounded = true;
+            } else {
+                //keep applying gravity
+                this._gravity = this._gravity.addInPlace(Vector3.Up().scale(this._delta_time * PlayerController.GRAVITY));
+                this._grounded = false;
+            }
+        }
+        //limit the speed of gravity to the negative of the jump power
+        if (this._gravity.y < -PlayerController.JUMP_FORCE) {
+            this._gravity.y = -PlayerController.JUMP_FORCE;
+        }
+        //下落过程
+        if(this._gravity.y <0 && this._jumped){
+            this._isFalling = true;
+        }
+        this._moveDirection = this._moveDirection.addInPlace(this._gravity);
+        this.mesh.moveWithCollisions(this._moveDirection);
+
+        if (this._isGrounded()) {
+            this._gravity.y = 0;
+            this._grounded = true;
+            this._lastGroundPos.copyFrom(this.mesh.position);
+
+            this._jumpCount = 1;
+            this._isFalling = false;
+            this._jumped = false;
+        }
+        if(this._input.jumpKeyDown && this._jumpCount >0){
+            this._gravity.y = PlayerController.JUMP_FORCE;
+            this._jumpCount--;
+            this._jumped = true;
+            this._isFalling = false;
+        }
+    }
+    private _floorRaycast(offsetX:number,offsetZ:number,distance:number):boolean{
+        if(!this.mesh){
+            return false;
+        }
+        const pos = new Vector3(
+            this.mesh.position.x + offsetX,
+            this.mesh.position.y + 0.5,
+            this.mesh.position.z + offsetZ);
+
+        const ray = new Ray(pos,Vector3.Up().scale(-1),distance);
+        const predicate = (mesh)=>{
+            return mesh.isPickable && mesh.isEnabled();
+        }
+        let pick = this._scene.pickWithRay(ray,predicate);
+
+        if (pick.hit) { 
+            return true;
+        } else { 
+            return false;
+        }
+    }
+    private _isGrounded(): boolean {
+        if (this._floorRaycast(0, 0, 0.6)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
     private inputController(){
         this._scene.actionManager.registerAction(
             new ExecuteCodeAction(ActionManager.OnKeyDownTrigger,(evt)=>{
@@ -263,18 +477,37 @@ export default class PlayerController{
         }))
     }
 
-    private _setUpAnimations(): void {
+    private _animatePlayer(): void {
+        if (!this._dashPressed && !this._isFalling && !this._jumped 
+            && (this._input.inputMap["ArrowUp"] //|| this._input.mobileUp
+            || this._input.inputMap["ArrowDown"] //|| this._input.mobileDown
+            || this._input.inputMap["ArrowLeft"] //|| this._input.mobileLeft
+            || this._input.inputMap["ArrowRight"] //|| this._input.mobileRight)
+            )){
 
-        this._scene.stopAllAnimations();
-        this._animations['Walking'].loopAnimation = true;
-        this._animations['WalkingBack'].loopAnimation = true;
-        this._animations['Idle'].loopAnimation = true;
+            this._curAnims = this._run;
+            // this.onRun.notifyObservers(true);
+        } 
+        else if (this._jumped && !this._isFalling && !this._dashPressed) {
+            this._curAnims = this._jump;
+        } 
+        else if (!this._isFalling && this._grounded) {
+            this._curAnims = this._idle;
+            //only notify observer if it's playing
+            // if(this.scene.getSoundByName("walking").isPlaying){
+            //     this.onRun.notifyObservers(false);
+            // }
+        } else if (this._isFalling) {
+            this._curAnims = this._land;
+        }
 
-        //initialize current and previous
-        this._curAnim = this._animations['Idle'];
-        this._preAnim = null;
+        //Animations
+        if(this._curAnims != null && this._preAnims !== this._curAnims){
+            this._preAnims.stop();
+            this._curAnims.play(this._curAnims.loopAnimation);
+            this._preAnims = this._curAnims;
+        }
     }
-
     private _isFloor(offsetX:number,offsetY:number,offsetZ:number,distance):PickingInfo{
         const p_pos = this._player.position;
         const pos = new Vector3(
@@ -308,7 +541,7 @@ export default class PlayerController{
             }
             let gravity = Vector3.Zero();
             if(!this._isGround()){
-                gravity = PlayerController.GRAVITY;
+                gravity.y = PlayerController.GRAVITY;
             }
             // console.log(gravity);
             if(this._inputMap['w']){
