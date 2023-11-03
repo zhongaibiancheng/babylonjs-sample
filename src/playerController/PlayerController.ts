@@ -5,7 +5,7 @@ import { AbstractMesh, ActionManager,
     PointLight, 
     Ray, Texture,
     Scene, SceneLoader, ShadowGenerator, StandardMaterial,TransformNode, 
-    UniversalCamera, Vector3, _PrimaryIsoTriangle, CubeTexture, Vector2, PickingInfo } from "@babylonjs/core";
+    UniversalCamera, Vector3, _PrimaryIsoTriangle, CubeTexture, Vector2, PickingInfo, NodeMaterial } from "@babylonjs/core";
 
 
 import { SkyMaterial, TerrainMaterial, WaterMaterial } from '@babylonjs/materials';
@@ -104,6 +104,35 @@ export default class PlayerController{
         window.addEventListener("resize",(evt)=>{
             this._engine.resize();
         });
+        // load the shattered mesh obj and start animation when it's done
+    SceneLoader.Append("./models/", "object.obj", this._scene, (scene) => {
+        scene.meshes[3].setEnabled(false);
+        console.log(scene.meshes)
+        NodeMaterial.ParseFromSnippetAsync("K3DE99#10", scene).then(nodeMaterial => {
+            // get the uniform Time that is used to animate the shattering
+            var time = nodeMaterial.getInputBlockByPredicate(
+                b => b.name === "Time");
+            setTimeout(function(){
+                // when the cube touches the ground, hide the box and show the shattered mesh
+                scene.meshes[3].material = nodeMaterial;
+                scene.meshes[3].setEnabled(true);
+                cube.setEnabled(false);
+                cubeMirror.setEnabled(false);
+                time.value = 0;
+                var mirror = scene.meshes[3].clone();
+                mirror.scaling = new BABYLON.Vector3(1,-1,1);
+            }, 1337);
+
+            scene.registerBeforeRender(function(){
+                // animate the falling cube and its mirror version. Increase time
+                cube.position.y = 9.0 - 0.2 * (time.value * 10)  * (time.value * 10);
+                cube.rotation.x += 0.1;
+                cubeMirror.position.y = -cube.position.y;
+                cubeMirror.rotation.x = -cube.rotation.x;
+                time.value += 0.008;
+            });
+        });
+    
     }
     //TODO
     _createWater(skybox,ground){
