@@ -59,8 +59,8 @@ export default class PlayerController {
     _emitter:Mesh;
     _rocket:ParticleSystem;
 
-    // _camera:UniversalCamera;
-    _camera:ArcRotateCamera;
+    _camera:UniversalCamera;
+    // _camera:ArcRotateCamera;
     _camRoot:TransformNode;
     _yTilt:TransformNode;
 
@@ -151,14 +151,14 @@ export default class PlayerController {
         yTilt.parent = this._camRoot;
         this._yTilt = yTilt;
 
-        this._camera = new ArcRotateCamera("camera1",  0, 0, 0, new Vector3(0, 0, 0), this._scene);
-        this._camera.setPosition(new Vector3(0, 5, -30));
+        // this._camera = new ArcRotateCamera("camera1",  0, 0, 0, new Vector3(0, 0, 0), this._scene);
+        // this._camera.setPosition(new Vector3(0, 5, -30));
 
-        this._camera.attachControl(true);
-        this._camera.wheelDeltaPercentage = 0.02;
+        // this._camera.attachControl(true);
+        // this._camera.wheelDeltaPercentage = 0.02;
 
         // our actual camera that's pointing at our root's position
-        // this._camera = new UniversalCamera("cam", new Vector3(0, 0, -20), this._scene);
+        this._camera = new UniversalCamera("cam", new Vector3(0, 0, -20), this._scene);
         this._camera.lockedTarget = this._camRoot.position;
         this._camera.fov = 0.47350045992678597;
         this._camera.parent = yTilt;
