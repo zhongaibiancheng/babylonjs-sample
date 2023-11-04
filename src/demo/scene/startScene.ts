@@ -13,9 +13,11 @@ import BaseScene from './baseScene'
 import {SceneParams} from '../utils/const';
 
 export default class StartScene extends BaseScene{
+
     constructor(engine:Engine,scene:Scene){
         super(engine,scene);
     }
+
     async init(params:SceneParams|undefined):Promise<Scene>{
         this._engine.displayLoadingUI();
         this._scene.detachControl();
@@ -29,7 +31,7 @@ export default class StartScene extends BaseScene{
         const guiMenu = AdvancedDynamicTexture.CreateFullscreenUI("UI");
         guiMenu.idealHeight = 720;
 
-        const start_btn = Button.CreateSimpleButton("start","PLAY");
+        const start_btn = Button.CreateSimpleButton("start","Start");
         start_btn.width = 0.2;
         start_btn.height = "40px";
         start_btn.color = "white";

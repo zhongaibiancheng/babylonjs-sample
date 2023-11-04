@@ -3,22 +3,21 @@ import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
 import { 
     Engine, Scene, ArcRotateCamera, 
-    FreeCamera,
+    Color3,
     Vector3, HemisphericLight, Mesh, MeshBuilder, 
-    Color4, 
-    Camera,
-    AnimationGroup} from "@babylonjs/core";
+    AnimationGroup,
+    Color4} from "@babylonjs/core";
 
 import StartScene from './scene/startScene';
 import LoadingScene from './scene/loadingScene';
 import GameScene from "./scene/gameScene";
-import Environment from "./enviroment/enviroment";
+import Environment from "./environment/environment";
 
 enum State{
     START =0,
     GAME =1,
     LOSE =2,
-    CUTSCENE=3
+    LOADINGSCENE=3
 }
 class App{
     _engine:Engine;
@@ -30,9 +29,9 @@ class App{
 
     _player_mesh:Mesh;
     _animations:Array<AnimationGroup>;
-    constructor(){
 
-        this._canvas = this.createCanvas();
+    constructor(){
+        this._canvas = this._createCanvas();
         this._engine = new Engine(this._canvas,true);
         this._scene = new Scene(this._engine);
 
@@ -40,29 +39,16 @@ class App{
             "camera",
             Math.PI / 2, 
             Math.PI / 2, 
-            2, 
+            20, 
             Vector3.Zero(), 
             this._scene);
 
         camera.attachControl(this._canvas,true);
-        /* eslint-disable */
-        const light = new HemisphericLight(
-            "light1",
-            new Vector3(1,1,0),
-            this._scene);
 
-        /* eslint-disable */
-        const sphere:Mesh = MeshBuilder.CreateSphere(
-            "sphere",
-            {
-                diameter: 1
-            },
-            this._scene);
-        
         this._main();
     }
 
-    createCanvas(){
+    private _createCanvas(){
         const canvas = document.createElement("canvas");
         canvas.style.width = "100%";
         canvas.style.height = "100%";
@@ -71,14 +57,15 @@ class App{
 
         return canvas;
     }
+
     _main(){
         this._gotoStart();
         this._engine.runRenderLoop(()=>{
             switch(this._state){
-                // case State.CUTSCENE:
+                case State.LOADINGSCENE:
                 case State.GAME:
                 // case State.LOSE:
-                // case State.START:
+                case State.START:
                     this._scene.render();
                     break;
                 default:
@@ -105,12 +92,12 @@ class App{
 
         this._scene.dispose();
         this._scene = scene;
-        this._state = State.CUTSCENE;
+        this._state = State.LOADINGSCENE;
     }
     async _gotoGame(){
         const game = new GameScene(this._engine,this._scene);
         game.init({
-            callback:this._gotoLose.bind(this),
+            callback:undefined,
             game_scene:this._game_scene,
             player_mesh:this._player_mesh,
             animations:this._animations,

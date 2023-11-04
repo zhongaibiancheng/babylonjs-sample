@@ -17,7 +17,7 @@ import { AdvancedDynamicTexture, Button, Control } from "@babylonjs/gui";
 
 import BaseScene from './baseScene'
 import {SceneParams} from '../utils/const';
-import PlayerController from "../controller/playController";
+import PlayerController from "../controller/playerController";
 import InputController from '../controller/inputController';
 
 export default class GameScene extends BaseScene{
@@ -65,23 +65,6 @@ export default class GameScene extends BaseScene{
 
         const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
         playerUI.idealHeight = 720;
-
-        //create a simple button
-        const loseBtn = Button.CreateSimpleButton("lose", "LOSE");
-        loseBtn.width = 0.2
-        loseBtn.height = "40px";
-        loseBtn.color = "white";
-        loseBtn.top = "-14px";
-        loseBtn.thickness = 0;
-        loseBtn.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
-        playerUI.addControl(loseBtn);
-
-        loseBtn.onPointerUpObservable.add(() => {
-            if(params && params.callback){
-                params.callback();
-            }
-            scene.detachControl();
-        })
 
         await this._initializeGameAsync(scene);
         

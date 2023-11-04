@@ -21,16 +21,28 @@ import {
     TransformNode,
     ExecuteCodeAction,
     AnimationGroup,
-    ActionManager} from "@babylonjs/core";
+    ActionManager,
+    AssetsManager} from "@babylonjs/core";
 
 /**资源文件目录 */
 const ASSETS_PATH = "./demo/scene/";
 
 export default class Environment{
     private _scene:Scene;
+    private _assetsManager:AssetsManager;
 
     constructor(scene){
         this._scene = scene;
+        this._assetsManager = new AssetsManager(scene);
+
+        this._assetsManager.onProgress = 
+        (remainingCount, totalCount, lastFinishedTask)=>{
+            console.log('We are loading the scene. ' + remainingCount + ' out of ' + totalCount + ' items still need to be loaded.');
+        };
+    
+    this._assetsManager.onFinish = function(tasks) {
+console.log("finished loaded assets");
+    };
     }
 
     public async load(){
@@ -46,6 +58,11 @@ export default class Environment{
             "",
             ASSETS_PATH,
             "scene.glb");
+        // const task = this._assetsManager.addMeshTask("env task","",ASSETS_PATH,"scene.glb");
+        // task.onSuccess=(t)=>{
+            
+        // }
+
         const env = result.meshes[0];
 
         const allMeshes = env.getChildMeshes();
