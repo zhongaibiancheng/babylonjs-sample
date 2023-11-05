@@ -5,8 +5,8 @@
 // import CameraStudy  from "./camera/CameraStudy";
 // const camera = new CameraStudy();
 
-import PlayerController from './playerController/PlayerController';
-const player = new PlayerController();
+// import PlayerController from './playerController/PlayerController';
+// const player = new PlayerController();
 
 // import Sword from './playerController/sword';
 // const s = new Sword();
@@ -25,3 +25,6 @@ const player = new PlayerController();
 
 // import Demo from './demo/Demo';
 // const demo = new Demo();
+
+import Sword from './sword/sword_particle';
+const sword = new Sword();

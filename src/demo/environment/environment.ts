@@ -93,7 +93,6 @@ console.log("finished loaded assets");
                 m.isPickable = false;
             }
         });
-
         return {
             env:env,
             allMeshes:allMeshes
