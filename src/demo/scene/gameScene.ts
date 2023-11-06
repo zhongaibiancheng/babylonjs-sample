@@ -19,6 +19,7 @@ import BaseScene from './baseScene'
 import {SceneParams} from '../utils/const';
 import PlayerController from "../controller/playerController";
 import InputController from '../controller/inputController';
+import GUI from "../ui/ui";
 
 export default class GameScene extends BaseScene{
     _player_mesh:Mesh;
@@ -71,6 +72,9 @@ export default class GameScene extends BaseScene{
          //--WHEN SCENE IS FINISHED LOADING--
         await scene.whenReadyAsync();
         scene.getMeshByName("outer").position = scene.getTransformNodeByName("startPosition").getAbsolutePosition(); //move the player to the start position
+        
+        const gui = new GUI(scene,this._player.camera);
+
         return scene;
     }
 }
