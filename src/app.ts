@@ -26,5 +26,8 @@
 // import Demo from './demo/Demo';
 // const demo = new Demo();
 
-import Sword from './sword/sword_particle';
-const sword = new Sword();
+// import Sword from './sword/sword_particle';
+// const sword = new Sword();
+
+import PathFinding from './pathfinding/pathfinding';
+const pathfinding = new PathFinding();
