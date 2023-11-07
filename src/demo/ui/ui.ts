@@ -157,14 +157,16 @@ export default class GUI{
 
         inventoryMenu.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
         inventoryMenu.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
-        inventoryMenu.height = 0.7;
+        // inventoryMenu.height = "650px";
         inventoryMenu.width = 0.4;
-        inventoryMenu.thickness = 1;
+        inventoryMenu.thickness = 0;
         inventoryMenu.isVisible = true;
+        inventoryMenu.cornerRadius = 10;
 
-        const image = new Image("inventory","./demo/sprites/content.png");
-        image.width = "284px";
+        const image = new Image("inventory","./demo/sprites/board.png");
+        image.width = "568px";
         image.height = "376px";
+        image.stretch = Image.STRETCH_EXTEND;
         image.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
         image.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
 
@@ -175,6 +177,7 @@ export default class GUI{
         rect.left = "20px";
         rect.width = "240px";
         rect.height = "310px";
+        rect.thickness = 0;
 
         rect.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
         rect.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
@@ -182,14 +185,15 @@ export default class GUI{
         const rect_right = new Rectangle();
         rect_right.top = "60px";
         rect_right.left = "260px";
-        rect_right.width = "240px";
+        rect_right.width = "300px";
         rect_right.height = "310px";
 
         rect_right.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
         rect_right.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
+        rect_right.thickness = 0;
 
-        const right = new Image("content_detail","./demo/sprites/content_detail.png");
-        rect_right.addControl(right);
+        // const right = new Image("content_detail","./demo/sprites/content_detail.png");
+        // rect_right.addControl(right);
         inventoryMenu.addControl(rect_right);
 
         const item = new Image("inventory_item","./demo/sprites/inventory/item.png");
@@ -228,6 +232,28 @@ export default class GUI{
             bottom_grid.addControl(item.clone(),0,i);
         }
         rect.addControl(bottom_grid);
+
+        //button rect
+        const button_rect = new Rectangle();
+        button_rect.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
+        button_rect.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
+
+        button_rect.thickness = 0;
+        button_rect.width = "150px";
+        button_rect.height = "50px";
+
+        const close_btn = Button.CreateImageWithCenterTextButton("close","关闭","./demo/sprites/button/close.png");
+
+        close_btn.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
+        close_btn.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
+        close_btn.thickness =0;
+        close_btn.onPointerDownObservable.add(()=>{
+            inventoryMenu.isVisible = false;
+        });
+        button_rect.addControl(close_btn);
+
+        rect_right.addControl(button_rect);
+
         parent.addControl(inventoryMenu);
 /*
         //background image
