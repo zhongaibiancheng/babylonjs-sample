@@ -43,6 +43,8 @@ export default class PathFinding{
         this.loadCharacter().then(()=>{
         });
 
+        this._loadNPC();
+        
         this._creatNavMesh();
 
         this._main();
@@ -51,6 +53,55 @@ export default class PathFinding{
         });
     }
     
+    private async _loadNPC(){
+        const result = await SceneLoader.ImportMeshAsync(null,
+            "/models/",
+            "police_walking.glb",this._scene);
+    
+            const axes = new AxesViewer(this._scene,1);
+            const npc = result.meshes[0];
+            npc.position = new Vector3(5,0,5);
+
+            axes.xAxis.parent = npc;
+            axes.yAxis.parent = npc;
+            axes.zAxis.parent = npc;
+            npc.rotationQuaternion = null;
+            // npc.rotation.y += Math.PI/2.0;
+
+            let local = new Vector3();
+            console.log(npc.getDirection(local),local);
+
+            console.log(npc.position);
+
+            this._scene.onPointerObservable.add(pointerInfo=>{
+                switch(pointerInfo.type){
+                    case PointerEventTypes.POINTERDOWN:
+                    const line = this._scene.getMeshByName("lines");
+                    if(line){
+                        this._scene.removeMesh(line);
+                    }
+                    
+                        // npc.rotation.y += Math.PI/4.0;
+                        const pos_npc = npc.position;
+                        const pos_player = this._player.position;
+                        const myPoints = [
+                            pos_npc,
+                            pos_player
+                        ];
+                        
+                        const lines = MeshBuilder.CreateLines("lines", {points: myPoints});
+                        const vec3 = pos_player.subtract(pos_npc);
+                        let dir = vec3.normalize();
+                        const angle = Math.atan2(dir.x,dir.z) + Math.PI;
+                        npc.rotation.y = npc.rotation.y + (angle - npc.rotation.y )*0.05;
+
+                        const pos = npc.position;
+                        npc.position = pos.addInPlace(dir.scaleInPlace(0.4));
+                        // console.log(vec3,pos_npc,pos_player);
+                        break;
+                }
+            })
+    }
     private _createStaticMeshes(){
         const meshes = [];
         const ground = MeshBuilder.CreateGround("ground",{width:30,height:30},this._scene);
@@ -106,7 +157,7 @@ export default class PathFinding{
             navmeshParameters);
 
         var navmeshdebug = navigationPlugin.createDebugNavMesh(this._scene);
-        navmeshdebug.position = new Vector3(0, 0.5, 0);
+        navmeshdebug.position = new Vector3(0, 5, 0);
     
         var matdebug = new StandardMaterial('matdebug', this._scene);
         matdebug.diffuseColor = new Color3(0.1, 0.2, 1);
@@ -121,7 +172,7 @@ export default class PathFinding{
         height: 0.2,
         maxAcceleration: 4.0,
         maxSpeed: 1.0,
-        collisionQueryRange: 1.5,
+        collisionQueryRange: 0.5,
         pathOptimizationRange: 0.0,
         separationWeight: 1.0};
         
@@ -170,15 +221,15 @@ export default class PathFinding{
             }
     }
     
-    this._scene.onPointerObservable.add((pointerInfo) => {      		
-        switch (pointerInfo.type) {
-            case PointerEventTypes.POINTERDOWN:
-                if(pointerInfo.pickInfo.hit) {
-                    pointerDown(pointerInfo.pickInfo.pickedMesh)
-                }
-                break;
-                }
-            });
+    // this._scene.onPointerObservable.add((pointerInfo) => {      		
+    //     switch (pointerInfo.type) {
+    //         case PointerEventTypes.POINTERDOWN:
+    //             if(pointerInfo.pickInfo.hit) {
+    //                 pointerDown(pointerInfo.pickInfo.pickedMesh)
+    //             }
+    //             break;
+    //             }
+    //         });
 
         this._scene.onBeforeRenderObservable.add(()=> {
             if(!this._player){

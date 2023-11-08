@@ -29,5 +29,8 @@
 // import Sword from './sword/sword_particle';
 // const sword = new Sword();
 
-import PathFinding from './pathfinding/pathfinding';
+// import PathFinding from './pathfinding/pathfinding';
+// const pathfinding = new PathFinding();
+
+import PathFinding from './pathfinding/pathfinding_toward_move';
 const pathfinding = new PathFinding();
