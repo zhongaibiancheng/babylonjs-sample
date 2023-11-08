@@ -73,34 +73,34 @@ export default class PathFinding{
 
             console.log(npc.position);
 
-            this._scene.onPointerObservable.add(pointerInfo=>{
-                switch(pointerInfo.type){
-                    case PointerEventTypes.POINTERDOWN:
-                    const line = this._scene.getMeshByName("lines");
-                    if(line){
-                        this._scene.removeMesh(line);
-                    }
+            // this._scene.onPointerObservable.add(pointerInfo=>{
+            //     switch(pointerInfo.type){
+            //         case PointerEventTypes.POINTERDOWN:
+            //         const line = this._scene.getMeshByName("lines");
+            //         if(line){
+            //             this._scene.removeMesh(line);
+            //         }
                     
-                        // npc.rotation.y += Math.PI/4.0;
-                        const pos_npc = npc.position;
-                        const pos_player = this._player.position;
-                        const myPoints = [
-                            pos_npc,
-                            pos_player
-                        ];
+            //             // npc.rotation.y += Math.PI/4.0;
+            //             const pos_npc = npc.position;
+            //             const pos_player = this._player.position;
+            //             const myPoints = [
+            //                 pos_npc,
+            //                 pos_player
+            //             ];
                         
-                        const lines = MeshBuilder.CreateLines("lines", {points: myPoints});
-                        const vec3 = pos_player.subtract(pos_npc);
-                        let dir = vec3.normalize();
-                        const angle = Math.atan2(dir.x,dir.z) + Math.PI;
-                        npc.rotation.y = npc.rotation.y + (angle - npc.rotation.y )*0.05;
+            //             const lines = MeshBuilder.CreateLines("lines", {points: myPoints});
+            //             const vec3 = pos_player.subtract(pos_npc);
+            //             let dir = vec3.normalize();
+            //             const angle = Math.atan2(dir.x,dir.z) + Math.PI;
+            //             npc.rotation.y = npc.rotation.y + (angle - npc.rotation.y )*0.05;
 
-                        const pos = npc.position;
-                        npc.position = pos.addInPlace(dir.scaleInPlace(0.4));
-                        // console.log(vec3,pos_npc,pos_player);
-                        break;
-                }
-            })
+            //             const pos = npc.position;
+            //             npc.position = pos.addInPlace(dir.scaleInPlace(0.4));
+            //             // console.log(vec3,pos_npc,pos_player);
+            //             break;
+            //     }
+            // })
     }
     private _createStaticMeshes(){
         const meshes = [];
@@ -207,9 +207,9 @@ export default class PathFinding{
             currentMesh = mesh;
             startingPoint = getGroundPosition();
             if (startingPoint) { // we need to disconnect camera from canvas
-                setTimeout(()=> {
-                    // this._camera.detachControl();
-                }, 0);
+                // setTimeout(()=> {
+                //     // this._camera.detachControl();
+                // }, 0);
                 var agents = crowd.getAgents();
                 var i;
                 for (i=0;i<agents.length;i++) {
@@ -221,15 +221,15 @@ export default class PathFinding{
             }
     }
     
-    // this._scene.onPointerObservable.add((pointerInfo) => {      		
-    //     switch (pointerInfo.type) {
-    //         case PointerEventTypes.POINTERDOWN:
-    //             if(pointerInfo.pickInfo.hit) {
-    //                 pointerDown(pointerInfo.pickInfo.pickedMesh)
-    //             }
-    //             break;
-    //             }
-    //         });
+    this._scene.onPointerObservable.add((pointerInfo) => {      		
+        switch (pointerInfo.type) {
+            case PointerEventTypes.POINTERDOWN:
+                if(pointerInfo.pickInfo.hit) {
+                    pointerDown(pointerInfo.pickInfo.pickedMesh)
+                }
+                break;
+                }
+            });
 
         this._scene.onBeforeRenderObservable.add(()=> {
             if(!this._player){

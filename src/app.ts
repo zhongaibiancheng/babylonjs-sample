@@ -32,5 +32,8 @@
 // import PathFinding from './pathfinding/pathfinding';
 // const pathfinding = new PathFinding();
 
-import PathFinding from './pathfinding/pathfinding_toward_move';
-const pathfinding = new PathFinding();
+// import PathFinding from './pathfinding/pathfinding_toward_move';
+// const pathfinding = new PathFinding();
+
+import NPChase from './pathfinding/npcChase';
+const npcChase = new NPChase();
