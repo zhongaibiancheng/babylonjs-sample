@@ -1,3 +1,9 @@
+
+/*
+*自动转向某个方向和移动到该位置
+*
+* 
+*/
 import {
     ArcRotateCamera, AxesViewer, Color3, 
     Color4, Engine, 
