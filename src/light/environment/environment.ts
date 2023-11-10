@@ -8,7 +8,8 @@ import {
     Matrix,
     Quaternion,
     SceneLoader,
-    AssetsManager} from "@babylonjs/core";
+    AssetsManager,
+    AnimationGroup} from "@babylonjs/core";
 
 /**资源文件目录 */
 const ASSETS_PATH = "./light/scene/";
@@ -27,7 +28,7 @@ export default class Environment{
         };
     
     this._assetsManager.onFinish = function(tasks) {
-console.log("finished loaded assets");
+
     };
     }
 
@@ -46,8 +47,10 @@ console.log("finished loaded assets");
             "scene_001.glb");
 
         const env = result.meshes[0];
+        console.log(env);
+
         env.computeWorldMatrix(true);
-        
+
         const allMeshes = env.getChildMeshes();
 
         allMeshes.forEach(m=>{
@@ -76,6 +79,23 @@ console.log("finished loaded assets");
                 m.isPickable = false;
             }
         });
+        
+        //wood
+        const result_box = await SceneLoader.ImportMeshAsync(
+            "",
+            ASSETS_PATH_MODELS,
+            "boost_box.glb");
+        const box = result_box.meshes[0];
+        box.name = "love";
+        box.position.y = 1.5;
+
+        //board
+        const board = this._scene.getTransformNodeById("Placa");
+        console.log(board.animations);
+        const wave = board.animations[0] as unknown as AnimationGroup;
+        wave.loopAnimation = true;
+        wave.play(wave.loopAnimation);
+
         return {
             env:env,
             allMeshes:allMeshes

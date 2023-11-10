@@ -87,6 +87,7 @@ export default class GameScene extends BaseScene{
     }
 
     private _createParticle(scene){
+        //创建love particle
         const node = scene.getMeshByName("love");
         node.computeWorldMatrix(true);
 
@@ -95,14 +96,17 @@ export default class GameScene extends BaseScene{
             segments: 32
         }, scene);
 
-        sphere.position = node.getAbsolutePosition();
-        sphere.position.y -= 0.15;
-        // node.parent = sphere;
+        sphere.parent = node;
 
         const creator = new ParticleCreator(scene);
         const particle = creator.createLoveParticle(sphere);
         particle.start();
 
+        //创建wood particle
+        const wood = scene.getTransformNodeByName("wood_pos");
+        // wood.computeWorldMatrix(true);
+        const wood_particle = creator.createWoodParticle(wood);
+        wood_particle.start();
     }
     /**
      * 生成精灵花草
