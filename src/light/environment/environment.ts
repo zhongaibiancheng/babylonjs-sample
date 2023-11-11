@@ -4,6 +4,7 @@ import "@babylonjs/loaders/glTF";
 
 import { 
     Scene, 
+    Animation,
     Vector3, MeshBuilder, 
     Matrix,
     Quaternion,
@@ -47,7 +48,7 @@ export default class Environment{
             "scene_001.glb");
 
         const env = result.meshes[0];
-        console.log(env);
+        // console.log(env);
 
         env.computeWorldMatrix(true);
 
@@ -89,19 +90,13 @@ export default class Environment{
         box.name = "love";
         box.position.y = 1.5;
 
-        //board
-        const board = this._scene.getTransformNodeById("Placa");
-        console.log(board.animations);
-        const wave = board.animations[0] as unknown as AnimationGroup;
-        wave.loopAnimation = true;
-        wave.play(wave.loopAnimation);
-
         return {
             env:env,
             allMeshes:allMeshes
         }
     }
 
+    
     /**
      * 
      * 加载人物和动画

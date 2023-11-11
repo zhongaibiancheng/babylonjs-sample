@@ -3,7 +3,6 @@ import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
 import { 
     Engine, Scene,
-    FreeCamera,
     Vector3,
     Color4,
     HemisphericLight,
@@ -12,11 +11,12 @@ import {
     Color3,
     ShadowGenerator,
     AnimationGroup,
+    Animation,
     SpriteManager,
     Sprite,
     MeshBuilder
 } from "@babylonjs/core";
-import { AdvancedDynamicTexture, Button, Control } from "@babylonjs/gui";
+import { AdvancedDynamicTexture} from "@babylonjs/gui";
 
 import BaseScene from './baseScene'
 import {SceneParams} from '../utils/const';
@@ -81,6 +81,9 @@ export default class GameScene extends BaseScene{
         this._createSprite(scene);
         
         this._createParticle(scene);
+
+        this._waveBoard(scene);
+        
         const gui = new GUI(scene,this._player.camera);
 
         return scene;
@@ -163,5 +166,19 @@ export default class GameScene extends BaseScene{
             tree.position = flower.getAbsolutePosition();
             tree.position.y = 0.7;
         }
+    }
+    /**
+     * 晃动board
+     * @param scene 
+     */
+    private _waveBoard(scene){
+        //board
+        const board = scene.getTransformNodeByName("Placa");
+
+        const animation = board.animations[0];
+        var animationGroup = new AnimationGroup("wave board");
+        animationGroup.addTargetedAnimation(animation, board);
+
+        animationGroup.play(true);
     }
 }
