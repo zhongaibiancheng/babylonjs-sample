@@ -15,6 +15,7 @@ export default class NPChase{
     canvas:HTMLCanvasElement;
     _player:any;
     staticMeshes:any;
+    
     constructor(){
         Engine.CollisionsEpsilon = 0.00005;
 

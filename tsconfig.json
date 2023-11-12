@@ -11,9 +11,10 @@
         "dom",
         "es6"
     ],
+
     "rootDir": "src",
     "types": [
       // "babylonjs"
-  ],
-  }
+    ],
+  },
 }
