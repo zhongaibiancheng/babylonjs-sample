@@ -53,9 +53,10 @@ export default class FireBall{
                 case PointerEventTypes.POINTERTAP:
                     switch (pointerInfo.event.button) {
                         case 0: 
-                            console.log("LEFT");
                             this._ball.position = this._player.position;
                             this._ball.position.y = 2;
+                            this._ball.metadata.particles.reset();
+                            this._ball.metadata.particles.start();
 
                             const originalFacing = new Vector3(0, 0, 1);
                             const facing = Vector3.TransformCoordinates(
@@ -63,7 +64,7 @@ export default class FireBall{
                                 this._player.getWorldMatrix().getRotationMatrix());
                             facing.normalize();
 
-                            const f = facing.scaleInPlace(0.1);
+                            const f = facing.scaleInPlace(0.5);
                             const points = [
                                 Vector3.Zero(),
                                 f
@@ -140,38 +141,38 @@ export default class FireBall{
             })
     }
     private _createFireball(){
-        let pSystem = new ParticleSystem("particles", 500, this._scene);
+        let pSystem = new ParticleSystem("particles", 20000, this._scene);
 		pSystem.emitter = this._ball;
 		pSystem.blendMode = ParticleSystem.BLENDMODE_ONEONE;
-		// pSystem.light = new BABYLON.PointLight("Omni1", new BABYLON.Vector3(0, 0, 0), scene);
-		// pSystem.light.diffuse = new BABYLON.Color3(.8, 0, 0);
-		// pSystem.light.range = 15;
-			
+
 		pSystem.particleTexture = new Texture("textures/flare.png", this._scene);
-		pSystem.minEmitBox = new Vector3(0, -0.1, 0);
-		pSystem.maxEmitBox = new Vector3(0, 0.1, 0);
+		pSystem.minEmitBox = new Vector3(-0.2, -0.2, -0.2);
+		pSystem.maxEmitBox = new Vector3(0.2, 0.2, 0.2);
 		pSystem.color1 = new Color4(1.0, 0.05, 0.05, .9);
 		pSystem.color2 = new Color4(0.85, 0.05, 0, .9);
 		pSystem.colorDead = new Color4(.5, .02, 0, .5);
-		pSystem.minSize = 0.2;
-		pSystem.maxSize = 0.4;
+		pSystem.minSize = 0.7;
+		pSystem.maxSize = 0.8;
 		pSystem.minLifeTime = 0.1;
 		pSystem.maxLifeTime = 0.15;
-		pSystem.emitRate = 100;
+		pSystem.emitRate = 500;
 		pSystem.gravity = new Vector3(0, 0, 0);
 		pSystem.direction1 = new Vector3(0, .05, 0);
 		pSystem.direction2 = new Vector3(0, -.05, 0);
-		pSystem.minAngularSpeed = 1.5;
-		pSystem.maxAngularSpeed = 2.5;
-		pSystem.minEmitPower = 0.1;
+		pSystem.minAngularSpeed = 0.15;
+		pSystem.maxAngularSpeed = 0.25;
+		pSystem.minEmitPower = 0.5;
 		pSystem.maxEmitPower = 1;
 		pSystem.updateSpeed = 0.008;
 
         pSystem.start();
+        this._ball.metadata = {};
+        this._ball.metadata.particles = pSystem;
     }
     private _createWeapon(){
         this._ball = MeshBuilder.CreateSphere("ball",{
-            diameter:0.2,segments:32});
+            diameter:0.1,segments:32});
+        this._ball.isVisible = false;
         this._ball.position.y = 2;
         this._ball.physicsImpostor = new PhysicsImpostor(
             this._ball,PhysicsImpostor.SphereImpostor,{
@@ -187,7 +188,8 @@ export default class FireBall{
             parameter: this._scene.getMeshByName("police"),
         },
         () => {
-            console.log("ball hit the police")
+            // console.log("ball hit the police")
+            this._ball.metadata.particles.stop();
         },
         ));
     }
