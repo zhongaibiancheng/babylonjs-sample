@@ -7,6 +7,7 @@ import { ActionManager, AmmoJSPlugin, ArcRotateCamera, AxesViewer, Color3, Color
      PhysicsImpostor, 
      PointerEventTypes, 
      Scene, SceneLoader, StandardMaterial, Texture, TextureUsage, Vector3,
+      Vector4,
       VertexData,
       _PrimaryIsoTriangle } from "@babylonjs/core";
 import "@babylonjs/loaders/glTF";
@@ -32,15 +33,23 @@ export default class FireBall{
         camera.attachControl(canvas,true);
         camera.wheelDeltaPercentage = 0.02;
 
-        const ground = MeshBuilder.CreateGround("ground",{width:15,height:16},this._scene);
-        ground.position.y = -2;
-        const mtl = new StandardMaterial("ground",this._scene);
-        mtl.diffuseColor = new Color3(0.3,0.4,0.5);
-        mtl.backFaceCulling = false;
-        ground.material = mtl;
-        
         const axis =  new AxesViewer(this._scene, 5);
         this._setPhysics().then(()=>{
+            const ground = MeshBuilder.CreateGround("ground",{width:50,height:50},this._scene);
+            // ground.position.y = -2;
+            const mtl = new StandardMaterial("ground",this._scene);
+            mtl.diffuseColor = new Color3(0.3,0.4,0.5);
+            mtl.backFaceCulling = false;
+            ground.material = mtl;
+            
+            ground.physicsImpostor = new PhysicsImpostor(
+                ground,
+                PhysicsImpostor.BoxImpostor,
+                {
+                    mass:0
+                }
+            );
+            this._createStaticMeshes();
             this._loadCharacter().then(()=>{
                     this._createWeapon();
                 });
@@ -48,35 +57,36 @@ export default class FireBall{
         );
         this._main();
         
+        this._pickDest();
         this._scene.onPointerObservable.add((pointerInfo)=>{
             switch (pointerInfo.type) {
                 case PointerEventTypes.POINTERTAP:
                     switch (pointerInfo.event.button) {
                         case 0: 
-                            this._ball.position = this._player.position;
-                            this._ball.position.y = 2;
-                            this._ball.metadata.particles.reset();
-                            this._ball.metadata.particles.start();
+                            // this._ball.position = this._player.position;
+                            // this._ball.position.y = 2;
+                            // this._ball.metadata.particles.reset();
+                            // this._ball.metadata.particles.start();
 
-                            const originalFacing = new Vector3(0, 0, 1);
-                            const facing = Vector3.TransformCoordinates(
-                                originalFacing, 
-                                this._player.getWorldMatrix().getRotationMatrix());
-                            facing.normalize();
+                            // const originalFacing = new Vector3(0, 0, 1);
+                            // const facing = Vector3.TransformCoordinates(
+                            //     originalFacing, 
+                            //     this._player.getWorldMatrix().getRotationMatrix());
+                            // facing.normalize();
 
-                            const f = facing.scaleInPlace(0.5);
-                            const points = [
-                                Vector3.Zero(),
-                                f
-                            ];
-                            MeshBuilder.CreateLines("facing",{
-                                points:points
-                            });
+                            // const f = facing.scaleInPlace(0.5);
+                            // const points = [
+                            //     Vector3.Zero(),
+                            //     f
+                            // ];
+                            // MeshBuilder.CreateLines("facing",{
+                            //     points:points
+                            // });
 
-                            this._ball.applyImpulse(
-                                // new Vector3(0, 0, 20), 
-                                f,
-                                this._ball.getAbsolutePosition());
+                            // this._ball.applyImpulse(
+                            //     // new Vector3(0, 0, 20), 
+                            //     f,
+                            //     this._ball.getAbsolutePosition());
                             break;
                         case 1: 
                             console.log("MIDDLE");
@@ -98,6 +108,95 @@ export default class FireBall{
         })
     }
 
+    private _createStaticMeshes(){
+        for(let i=0;i<10;i++){
+            const box = MeshBuilder.CreateBox("box-"+i,{
+                width:0.2,height:2,depth:0.3
+            },this._scene);
+            box.position.x = Math.random()*10*(Math.random()>0.6?-1:1);
+            box.position.z = Math.random()*15*(Math.random()>0.5?-1:1);
+
+            box.physicsImpostor = new PhysicsImpostor(
+                box,
+                PhysicsImpostor.BoxImpostor,
+                {
+                    mass:0.01
+                });
+            
+            const sphere = MeshBuilder.CreateSphere("sphere-"+i,{
+                diameter:Math.random()*2,
+                segments:32
+            });
+
+            sphere.physicsImpostor = new PhysicsImpostor(
+                sphere,
+                PhysicsImpostor.SphereImpostor,
+                {mass:0.03});
+
+            sphere.position.y = 1;
+            sphere.position.x = Math.random()*10*(Math.random()>0.6?-1:1);
+            sphere.position.z = Math.random()*15*(Math.random()>0.5?-1:1);
+        }
+    }
+    private _pickDest(){
+        this._scene.onPointerObservable.add(pointerInfo=>{
+            if(pointerInfo.type === PointerEventTypes.POINTERDOWN){
+                if(pointerInfo.pickInfo.hit){
+                    const distance = pointerInfo.pickInfo.distance;
+                    // const pos = pointerInfo.pickInfo.pickedMesh.position;
+                    const pos = pointerInfo.pickInfo.pickedPoint;
+                    if(distance<=200){
+                        const weapon_pos = this._player.position.clone();
+                        weapon_pos.y = 1;
+                        const dir = pos.subtract(weapon_pos);
+
+                        // const dest_player = MeshBuilder.CreateLines("dest-player",{
+                        //     points:[
+                        //     Vector3.Zero(),
+                        //     dir
+                        // ]});
+                        // dest_player.color = new Color3(1,0,0);
+
+                        dir.normalize();
+                        let angle = Math.atan2(dir.x,dir.z);
+
+                        const originalFacing = new Vector3(0, 0, 1);
+                        const facing = Vector3.TransformCoordinates(
+                            originalFacing, 
+                            this._player.getWorldMatrix().getRotationMatrix());
+                        
+                        // const facing_line = MeshBuilder.CreateLines("facing_line",{points:[
+                        //     Vector3.Zero(),
+                        //     facing
+                        // ]});
+                        // facing_line.color = new Color3(0,1,0);
+                        facing.normalize();
+
+                        const angle2 = Math.atan2(facing.x,facing.z);
+                        if(angle >=0){
+                            this._player.rotation.y += (angle - angle2);
+                        }else{
+                            angle = angle + Math.PI;
+                            this._player.rotation.y += (angle - angle2)+Math.PI;
+                        }
+                        this._ball.physicsImpostor.setAngularVelocity( Vector3.Zero() );
+                        this._ball.physicsImpostor.setLinearVelocity( Vector3.Zero() );
+                        const f = dir.scaleInPlace(0.5);
+                        this._ball.position = this._player.position.clone();
+                        
+                        this._ball.position.y = 1;
+                        this._ball.metadata.particles.reset();
+                        this._ball.metadata.particles.start();
+                        this._ball.applyImpulse(
+                            f,
+                            this._ball.getAbsolutePosition());
+
+                        // console.log(angle,angle2);
+                    }
+                }
+            }
+        });
+    }
     private async _loadCharacter(){
         const result =  await SceneLoader.ImportMeshAsync(
             "",
@@ -177,21 +276,22 @@ export default class FireBall{
         this._ball.physicsImpostor = new PhysicsImpostor(
             this._ball,PhysicsImpostor.SphereImpostor,{
                 mass:0.1,
-                friction:0.1
+                friction:0.0
             },
             this._scene);
 
         this._createFireball();
-        this._ball.actionManager = new ActionManager(this._scene);
-        this._ball.actionManager.registerAction(new ExecuteCodeAction({
-            trigger: ActionManager.OnIntersectionEnterTrigger,
-            parameter: this._scene.getMeshByName("police"),
-        },
-        () => {
-            // console.log("ball hit the police")
-            this._ball.metadata.particles.stop();
-        },
-        ));
+        //单个碰撞测试
+        // this._ball.actionManager = new ActionManager(this._scene);
+        // this._ball.actionManager.registerAction(new ExecuteCodeAction({
+        //     trigger: ActionManager.OnIntersectionEnterTrigger,
+        //     parameter: this._scene.getMeshByName("police"),
+        // },
+        // () => {
+        //     // console.log("ball hit the police")
+        //     this._ball.metadata.particles.stop();
+        // },
+        // ));
     }
     private async _setPhysics(){
         const Ammo = await ammo();
