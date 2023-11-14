@@ -41,5 +41,8 @@
 // import GUI from './GUI/gui';
 // const gui = new GUI();
 
-import FireBall from './xianglongshibazhang/fireball';
-const fireball = new FireBall();
+// import FireBall from './xianglongshibazhang/fireball';
+// const fireball = new FireBall();
+
+import Shatter from './shatter/shatter';
+const shatter = new Shatter();

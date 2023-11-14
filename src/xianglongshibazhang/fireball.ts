@@ -137,6 +137,8 @@ export default class FireBall{
             sphere.position.x = Math.random()*10*(Math.random()>0.6?-1:1);
             sphere.position.z = Math.random()*15*(Math.random()>0.5?-1:1);
         }
+
+
     }
     private _pickDest(){
         this._scene.onPointerObservable.add(pointerInfo=>{
@@ -237,7 +239,8 @@ export default class FireBall{
             PhysicsImpostor.BoxImpostor,
             {
                 mass:0.1
-            })
+            });
+
     }
     private _createFireball(){
         let pSystem = new ParticleSystem("particles", 20000, this._scene);
