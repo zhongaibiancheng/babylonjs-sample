@@ -1,5 +1,4 @@
-
-import ammo from "ammo.js";
+import Ammo from 'ammojs-typed';
 
 import { ActionManager, AmmoJSPlugin, ArcRotateCamera, AxesViewer, Color3, Color4, 
     Engine, ExecuteCodeAction, HemisphericLight, Matrix, Mesh, MeshBuilder,
@@ -297,8 +296,8 @@ export default class FireBall{
         // ));
     }
     private async _setPhysics(){
-        const Ammo = await ammo();
-        const physics = new AmmoJSPlugin(true,Ammo);
+        const ammo = await Ammo();
+        const physics = new AmmoJSPlugin(true,ammo);
         this._scene.enablePhysics(new Vector3(0,0,0),physics);
     }
     _main():void{

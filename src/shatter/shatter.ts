@@ -1,16 +1,19 @@
-import ammo from "ammo.js";
+// import ammo from "ammo.js";
+import Ammo from 'ammojs-typed';
 import { AmmoJSPlugin, AnimationGroup, ArcRotateCamera, AxesViewer, Color3, Color4, 
     Engine, HemisphericLight, Mesh, MeshAssetTask, MeshBuilder,
      NodeMaterial,
      ParticleSystem, 
      PhysicsImpostor, 
      PointerEventTypes, 
+     Quaternion, 
      Scene, SceneLoader, StandardMaterial, Texture, TextureUsage, Vector3,
       VertexData,
       _PrimaryIsoTriangle } from "@babylonjs/core";
 import "@babylonjs/loaders/glTF";
 import '@babylonjs/loaders/OBJ/objFileLoader';
-import { meshUVSpaceRendererPixelShader } from "@babylonjs/core/Shaders/meshUVSpaceRenderer.fragment";
+import { Inspector } from '@babylonjs/inspector';
+
 export default class Shatter{
     _engine:Engine;
     _scene:Scene;
@@ -21,6 +24,7 @@ export default class Shatter{
         this._engine = new Engine(canvas);
         this._scene = new Scene(this._engine);
 
+        Inspector.Show(this._scene,{});
         const light = new HemisphericLight("light",new Vector3(1,1,1),this._scene);
 
         var camera = new ArcRotateCamera("camera1",  0, 0, 0, new Vector3(0, 0, 0), this._scene);
@@ -38,6 +42,7 @@ export default class Shatter{
         
         const axis =  new AxesViewer(this._scene, 10);
 
+
         this._setPhysics().then(()=>{
             ground.physicsImpostor = new PhysicsImpostor(ground,PhysicsImpostor.BoxImpostor,{
                 mass:0
@@ -49,11 +54,14 @@ export default class Shatter{
         this._main();
     }
     private async _setPhysics(){
-        const Ammo = await ammo();
-        this._physics = new AmmoJSPlugin(false,Ammo);
+        const ammo = await Ammo();
+        this._physics = new AmmoJSPlugin(true,ammo);
         
         this._scene.enablePhysics(new Vector3(0,-9.8,0),this._physics);
-        this._physics.setTimeStep(0);
+        //cannon
+        // this._scene.enablePhysics();
+
+        // this._physics.setTimeStep(0);
 
     }
 
@@ -70,16 +78,17 @@ export default class Shatter{
 
         for(i=0;i<explode.meshes.length;i++){
             let mesh = explode.meshes[i];
+            mesh.position.y += 7;
+            mesh.parent = null;
             if(mesh === outer){
                 continue;
             }
-            mesh.position.y += 7;
-
+            
             mesh.physicsImpostor = new PhysicsImpostor(
                 mesh,
                 PhysicsImpostor.ConvexHullImpostor,
                 {
-                    mass: Math.random()*2.0,
+                    mass: 2,
                     friction: 1,
                     restitution: 0.2,
                     nativeOptions: {},
@@ -87,6 +96,7 @@ export default class Shatter{
                     disableBidirectionalTransformation: false
                 }
             );
+            mesh.physicsImpostor.physicsBody.setActivationState(5);
         }
         this._scene.onPointerObservable.add((pointerInfo)=>{
             switch (pointerInfo.type) {
@@ -94,7 +104,16 @@ export default class Shatter{
                     switch (pointerInfo.event.button) {
                         case 0:
                             outer.isVisible = false;
-                            this._physics.setTimeStep(1/60.0);
+                            // this._physics.setTimeStep(1/60.0);
+                            for(i=0;i<explode.meshes.length;i++){
+                                let mesh = explode.meshes[i];
+                                if(mesh === outer){
+                                    continue;
+                                }
+                                mesh.physicsImpostor.physicsBody.setActivationState(1);
+                                mesh.physicsImpostor.forceUpdate();
+                                // mesh.physicsImpostor.applyImpulse(new Vector3(0,1,0),mesh.getAbsolutePivotPoint());
+                            }
                             break;
                     }
                 }
