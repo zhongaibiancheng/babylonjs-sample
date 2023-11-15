@@ -69,12 +69,14 @@ export default class Shatter{
         const explode =  await SceneLoader.ImportMeshAsync(
             "",
             "./models/", "explode.glb",this._scene);
+console.log(explode);
 
         let i = 0;
-        const outer = this._scene.getMeshByName("Cube");
+        let outer = null;
+        // const outer = this._scene.getMeshByName("Cube");
 
-        outer.isVisible = true;
-        outer.scaling.setAll(1.2);
+        // outer.isVisible = true;
+        // outer.scaling.setAll(1.2);
 
         for(i=0;i<explode.meshes.length;i++){
             let mesh = explode.meshes[i];
