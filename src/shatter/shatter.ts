@@ -57,11 +57,6 @@ export default class Shatter{
         this._physics = new AmmoJSPlugin(true,ammo);
         
         this._scene.enablePhysics(new Vector3(0,-9.8,0),this._physics);
-        //cannon
-        // this._scene.enablePhysics();
-
-        // this._physics.setTimeStep(0);
-
     }
 
     private async _shatterBox(){
@@ -74,7 +69,7 @@ export default class Shatter{
         root.position.y += 0;
 
         const outer = this._scene.getMeshByName("Cube");
-        outer.isVisible = true;
+        // outer.isVisible = true;
 
         for(i=0;i<explode.meshes.length;i++){
             let mesh = explode.meshes[i];

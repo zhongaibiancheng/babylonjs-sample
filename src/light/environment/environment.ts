@@ -1,44 +1,126 @@
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
-
+import Ammo from 'ammojs-typed';
 import { 
     Scene, 
-    Animation,
+    AmmoJSPlugin,
     Vector3, MeshBuilder, 
     Matrix,
     Quaternion,
     SceneLoader,
-    AssetsManager,
-    AnimationGroup} from "@babylonjs/core";
+    PhysicsImpostor,
+    PointerEventTypes,
+    Mesh} from "@babylonjs/core";
 
 /**资源文件目录 */
 const ASSETS_PATH = "./light/scene/";
 const ASSETS_PATH_MODELS = "./light/models/";
 export default class Environment{
     private _scene:Scene;
-    private _assetsManager:AssetsManager;
 
     constructor(scene){
         this._scene = scene;
-        this._assetsManager = new AssetsManager(scene);
-
-        this._assetsManager.onProgress = 
-        (remainingCount, totalCount, lastFinishedTask)=>{
-            console.log('We are loading the scene. ' + remainingCount + ' out of ' + totalCount + ' items still need to be loaded.');
-        };
-    
-    this._assetsManager.onFinish = function(tasks) {
-
-    };
     }
 
+    private async _setPhysics(){
+        const ammo = await Ammo();
+        const physics = new AmmoJSPlugin(true,ammo);
+        
+        this._scene.enablePhysics(new Vector3(0,-9.8,0),physics);
+    }
     public async load(){
         const assets = await this._loadAssets();
         assets.allMeshes.forEach((child)=>{
             child.receiveShadows = true;
             child.checkCollisions = true;
         });
+
+        this._setPhysics().then(()=>{
+            this._loadRock().then(rock=>{
+                for(let i=0;i<4;i++){
+                    const root = rock.root.clone();
+
+                    root.position.x = 4*Math.sin(90*i/180*Math.PI);
+                    root.position.z = 4*Math.cos(90*i/180*Math.PI);
+                    root.position.y = 1;
+
+                    root.scaling.setAll(0.2);
+                    const fractures = [];
+                    let outer;
+
+                    for(let child of root.getChildMeshes()){
+                        if(child.name === ".Cube"){
+                            outer = child;
+                            continue;
+                        }
+                        if(child.name.includes("Cube_cell")){//fracture
+                            let mesh = child;
+                            
+                            mesh.scaling.setAll(0.2);
+
+                            mesh.parent = null;
+                            mesh.position = mesh.position.scale(0.2);
+
+                            mesh.position.x += root.position.x;
+                            mesh.position.y += root.position.y;
+                            mesh.position.z += root.position.z;
+
+                            mesh.physicsImpostor = new PhysicsImpostor(
+                                mesh,
+                                PhysicsImpostor.ConvexHullImpostor,
+                                {
+                                    mass: Math.random()*2,
+                                    friction: 1,
+                                    restitution: 0.2,
+                                    nativeOptions: {},
+                                    ignoreParent: true,
+                                    disableBidirectionalTransformation: false
+                                }
+                            );
+                            mesh.physicsImpostor.physicsBody.setActivationState(5);
+                            fractures.push(mesh);
+                        }
+                    }
+                    outer.metadata = {
+                        fractures:fractures
+                    }
+                }
+                rock.root.dispose();
+            });
+        });
+
+        this._scene.onPointerObservable.add((pointerInfo)=>{
+            switch (pointerInfo.type) {
+                case PointerEventTypes.POINTERTAP:
+                    switch (pointerInfo.event.button) {
+                        case 0:
+                            if(pointerInfo.pickInfo.pickedMesh){
+                                const outer = pointerInfo.pickInfo.pickedMesh;
+                                if(outer.name === '.Cube'){
+                                    outer.isVisible = false;
+                                    
+                                    const fractures = outer.metadata.fractures;
+                                    for(let i=0;i<fractures.length;i++){
+                                        let mesh = fractures[i];
+
+                                        mesh.physicsImpostor.physicsBody.setActivationState(1);
+                                        mesh.physicsImpostor.forceUpdate();
+                                    }
+
+                                    setTimeout(()=>{
+                                        outer.dispose();
+                                        fractures.forEach(element => {
+                                            element.dispose();
+                                        });
+                                    },3000);
+                                }
+                            }
+                            break;
+                    }
+                }
+        });
+
     }
 
     private async _loadAssets(){
@@ -48,7 +130,6 @@ export default class Environment{
             "scene_001.glb");
 
         const env = result.meshes[0];
-        // console.log(env);
 
         env.computeWorldMatrix(true);
 
@@ -96,7 +177,6 @@ export default class Environment{
         }
     }
 
-    
     /**
      * 
      * 加载人物和动画
@@ -150,5 +230,33 @@ export default class Environment{
             outer:outer,
             animations:animations
         };
+    }
+
+    /**
+     * 
+     * 加载岩石(该岩石可以爆炸)
+     * 
+     */
+    private async _loadRock(){
+        const explode =  await SceneLoader.ImportMeshAsync(
+            "",
+            "./light/models/", 
+            "rock.glb",
+            this._scene);
+
+        let root:any;
+
+        for(let i=0;i<explode.meshes.length;i++){
+            let mesh = explode.meshes[i];
+            //root node
+            if(mesh.name === '__root__'){
+                root = mesh;
+                break;
+            }
+        }
+
+        return {
+            root:root
+        }
     }
 }
