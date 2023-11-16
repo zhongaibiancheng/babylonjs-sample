@@ -1,7 +1,7 @@
 // import ammo from "ammo.js";
 import Ammo from 'ammojs-typed';
 import { AmmoJSPlugin, AnimationGroup, ArcRotateCamera, AxesViewer, Color3, Color4, 
-    Engine, HemisphericLight, Mesh, MeshAssetTask, MeshBuilder,
+    Engine, FadeInOutBehavior, HemisphericLight, Mesh, MeshAssetTask, MeshBuilder,
      NodeMaterial,
      ParticleSystem, 
      PhysicsImpostor, 
@@ -24,7 +24,7 @@ export default class Shatter{
         this._engine = new Engine(canvas);
         this._scene = new Scene(this._engine);
 
-        Inspector.Show(this._scene,{});
+        // Inspector.Show(this._scene,{});
         const light = new HemisphericLight("light",new Vector3(1,1,1),this._scene);
 
         var camera = new ArcRotateCamera("camera1",  0, 0, 0, new Vector3(0, 0, 0), this._scene);
@@ -41,7 +41,6 @@ export default class Shatter{
         ground.material = mtl;
         
         const axis =  new AxesViewer(this._scene, 10);
-
 
         this._setPhysics().then(()=>{
             ground.physicsImpostor = new PhysicsImpostor(ground,PhysicsImpostor.BoxImpostor,{
@@ -69,28 +68,27 @@ export default class Shatter{
         const explode =  await SceneLoader.ImportMeshAsync(
             "",
             "./models/", "explode.glb",this._scene);
-console.log(explode);
 
         let i = 0;
-        let outer = null;
-        // const outer = this._scene.getMeshByName("Cube");
+        const root = this._scene.getMeshByName("__root__");
+        root.position.y += 0;
 
-        // outer.isVisible = true;
-        // outer.scaling.setAll(1.2);
+        const outer = this._scene.getMeshByName("Cube");
+        outer.isVisible = true;
 
         for(i=0;i<explode.meshes.length;i++){
             let mesh = explode.meshes[i];
-            mesh.position.y += 7;
-            mesh.parent = null;
-            if(mesh === outer){
+            
+            if(mesh.name === "Cube"){
                 continue;
             }
-            
+            mesh.position.y += root.position.y;
+            mesh.parent = null;
             mesh.physicsImpostor = new PhysicsImpostor(
                 mesh,
                 PhysicsImpostor.ConvexHullImpostor,
                 {
-                    mass: 2,
+                    mass: Math.random()*2,
                     friction: 1,
                     restitution: 0.2,
                     nativeOptions: {},
@@ -100,12 +98,19 @@ console.log(explode);
             );
             mesh.physicsImpostor.physicsBody.setActivationState(5);
         }
+
+        const fractures = [];
+        // const fadeout = new FadeInOutBehavior();
+        
         this._scene.onPointerObservable.add((pointerInfo)=>{
             switch (pointerInfo.type) {
                 case PointerEventTypes.POINTERTAP:
                     switch (pointerInfo.event.button) {
                         case 0:
                             outer.isVisible = false;
+                            outer.dispose(true,true);
+                            // 
+
                             // this._physics.setTimeStep(1/60.0);
                             for(i=0;i<explode.meshes.length;i++){
                                 let mesh = explode.meshes[i];
@@ -114,8 +119,17 @@ console.log(explode);
                                 }
                                 mesh.physicsImpostor.physicsBody.setActivationState(1);
                                 mesh.physicsImpostor.forceUpdate();
-                                // mesh.physicsImpostor.applyImpulse(new Vector3(0,1,0),mesh.getAbsolutePivotPoint());
+
+                                fractures.push(mesh);
+                                // fadeout.attach(mesh as Mesh);
                             }
+                            // setTimeout(()=>{
+                            //     fractures.forEach((fracture,index)=>{
+                            //         // fadeout.fadeOutTime = 2000;
+                            //         // fadeout.fadeOut();
+                            //         fracture.dispose(true,true);
+                            //     });
+                            // },5000);
                             break;
                     }
                 }
