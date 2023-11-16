@@ -44,17 +44,23 @@ export default class PlayerController extends TransformNode {
 
     private win: boolean = false;
 
+    private _action_0:AnimationGroup;
+    private _action_1:AnimationGroup;
     private _idle: AnimationGroup;
     private _jump: AnimationGroup;
-    private _run: AnimationGroup;
-    private _land: AnimationGroup;
-    private _dash: AnimationGroup;
+    private _death :AnimationGroup;
+    private _back:AnimationGroup;
+    private _fly:AnimationGroup;
+    private _walk:AnimationGroup;
 
     private _preAnims: AnimationGroup;
     private _curAnims: AnimationGroup;
 
     //下落
     private _isFalling: boolean = false;
+
+    private _walking: boolean = false;
+
     //跳起
     private _jumped: boolean = false;
 
@@ -83,11 +89,14 @@ export default class PlayerController extends TransformNode {
 
         this._input = input;
 
-        this._idle = animations[1];
-        this._land = animations[3];
-        this._jump = animations[2];
-        this._run = animations[4];
-        this._dash = animations[0];
+        this._action_0 = animations[0];
+        this._action_1 = animations[1];
+        this._back = animations[2];
+        this._death = animations[3];
+        this._fly = animations[4];
+        this._idle = animations[5];
+        this._jump = animations[6];
+        this._walk = animations[7];
 
         this.mesh.actionManager.registerAction(new ExecuteCodeAction({
             trigger: ActionManager.OnIntersectionEnterTrigger,
@@ -98,25 +107,29 @@ export default class PlayerController extends TransformNode {
 
         this._setUpAnimations();
     }
+    /**
+     * 
+     * 播放角色动画
+     *
+     * 
+     */
     private _animatePlayer(): void {
-
         if (!this._dashPressed && !this._isFalling && !this._jumped
-            && (this._input.inputMap["ArrowUp"] //|| this._input.mobileUp
-                || this._input.inputMap["ArrowDown"] //|| this._input.mobileDown
-                || this._input.inputMap["ArrowLeft"] //|| this._input.mobileLeft
-                || this._input.inputMap["ArrowRight"] //|| this._input.mobileRight)
+            && (this._input.inputMap["ArrowUp"]
+                || this._input.inputMap["ArrowDown"]
+                || this._input.inputMap["ArrowLeft"]
+                || this._input.inputMap["ArrowRight"]
             )) {
-
-            this._curAnims = this._run;
-            // this.onRun.notifyObservers(true);
+            this._curAnims = this._walk;
         }
         else if (this._jumped && !this._isFalling && !this._dashPressed) {
             this._curAnims = this._jump;
         }
         else if (!this._isFalling && this._grounded) {
             this._curAnims = this._idle;
-        } else if (this._isFalling) {
-            this._curAnims = this._land;
+        } 
+        else if (this._walking) {
+            this._curAnims = this._walk;
         }
 
         //Animations
@@ -165,22 +178,19 @@ export default class PlayerController extends TransformNode {
         if (this._input.dashing && !this._dashPressed && this._canDash && !this._grounded) {
             this._canDash = false;
             this._dashPressed = true;
-
-            //sfx and animations
-            this._curAnims = this._dash;
         }
 
-        let dashFactor = 1;
-        //if you're dashing, scale movement
-        if (this._dashPressed) {
-            if (this.dashTime > PlayerController.DASH_TIME) {
-                this.dashTime = 0;
-                this._dashPressed = false;
-            } else {
-                dashFactor = PlayerController.DASH_FACTOR;
-            }
-            this.dashTime++;
-        }
+        // let dashFactor = 1;
+        // //if you're dashing, scale movement
+        // if (this._dashPressed) {
+        //     if (this.dashTime > PlayerController.DASH_TIME) {
+        //         this.dashTime = 0;
+        //         this._dashPressed = false;
+        //     } else {
+        //         dashFactor = PlayerController.DASH_FACTOR;
+        //     }
+        //     this.dashTime++;
+        // }
 
         let fwd = this._camRoot.forward;
         let right = this._camRoot.right;
@@ -199,7 +209,7 @@ export default class PlayerController extends TransformNode {
         }
 
         this._moveDirection.scaleInPlace(this._inputAmt * PlayerController.PLAYER_SPEED);
-
+    
         //检查是否旋转
         let rot = new Vector3(this._input.horizontalAxis, 0, this._input.verticalAxis);
         if (rot.length() === 0) {
@@ -217,6 +227,7 @@ export default class PlayerController extends TransformNode {
 
         return;
     }
+
     private _updateGroundDetection(): void {
         const is_ground = this._isGrounded();
 
@@ -242,6 +253,7 @@ export default class PlayerController extends TransformNode {
         }
         this._moveDirection = this._moveDirection.addInPlace(this._gravity);
         this.mesh.moveWithCollisions(this._moveDirection);
+        this._walking = true;
 
         if (this._isGrounded()) {
             this._gravity.y = 0;
@@ -257,6 +269,7 @@ export default class PlayerController extends TransformNode {
             this._jumpCount--;
             this._jumped = true;
             this._isFalling = false;
+            this._walking = false;
         }
     }
 
@@ -293,7 +306,7 @@ export default class PlayerController extends TransformNode {
     }
 
     private _beforeRenderUpdate(): void {
-        // this._updateFromControll();
+        this._updateFromControll();
         this._updateGroundDetection();
 
         this._animatePlayer();
@@ -322,22 +335,22 @@ export default class PlayerController extends TransformNode {
         yTilt.parent = this._camRoot;
 
         //our actual camera that's pointing at our root's position
-        // this.camera = new UniversalCamera("cam", new Vector3(0, 0, -30), this.scene);
-        this.camera = new ArcRotateCamera(
-            "cam",
-            0,
-            0,
-            0,
-            Vector3.Zero(),
-            this._scene
-        )
-        this.camera.position = new Vector3(20,20,20);
-        // this.camera.lockedTarget = this._camRoot.position;
-        // this.camera.fov = 0.47350045992678597;
-        // this.camera.parent = yTilt;
+        this.camera = new UniversalCamera("cam", new Vector3(0, 0, -30), this.scene);
+        // this.camera = new ArcRotateCamera(
+        //     "cam",
+        //     0,
+        //     0,
+        //     0,
+        //     Vector3.Zero(),
+        //     this._scene
+        // )
+        // this.camera.position = new Vector3(20,20,20);
+        this.camera.lockedTarget = this._camRoot.position;
+        this.camera.fov = 0.47350045992678597;
+        this.camera.parent = yTilt;
 
-        // this.scene.activeCamera = this.camera;
-        this.camera.attachControl();
+        this.scene.activeCamera = this.camera;
+        // this.camera.attachControl();
         return this.camera;
     }
 
@@ -387,14 +400,13 @@ export default class PlayerController extends TransformNode {
     }
     
     private _setUpAnimations(): void {
-
         this.scene.stopAllAnimations();
-        this._run.loopAnimation = true;
-        this._idle.loopAnimation = true;
 
+        this._idle.loopAnimation = true;
+        this._walk.loopAnimation = true;
         //initialize current and previous
         this._curAnims = this._idle;
-        this._preAnims = this._land;
+        this._preAnims = this._walk;
     }
 
 }
