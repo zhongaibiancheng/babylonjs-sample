@@ -42,10 +42,14 @@ export default class InputController{
     }
     _updateFromKeyboard(){
         if(this.inputMap["ArrowLeft"]){
-            this.horizontal = Scalar.Lerp(this.horizontal,-1,0.2);
+            // this.horizontal = Scalar.Lerp(this.horizontal,0.394,0.094);
+            this.horizontal = -0.1;
+            console.log("arrow left = "+this.horizontal)
             this.horizontalAxis = -1;
         }else if(this.inputMap["ArrowRight"]){
-            this.horizontal = Scalar.Lerp(this.horizontal,1,0.2);
+            // this.horizontal = Scalar.Lerp(this.horizontal,-0.394,-0.094);
+            this.horizontal = 0.1;
+            console.log("right left = "+this.horizontal)
             this.horizontalAxis = 1;
         }else{
             this.horizontal = 0;
@@ -53,10 +57,10 @@ export default class InputController{
         }
 
         if(this.inputMap["ArrowUp"]){
-            this.vertical = Scalar.Lerp(this.vertical,1,0.2);
+            this.vertical = Scalar.Lerp(this.vertical,1,0);
             this.verticalAxis = 1;
         }else if(this.inputMap["ArrowDown"]){
-            this.vertical = Scalar.Lerp(this.vertical,-1,0.2);
+            this.vertical = Scalar.Lerp(this.vertical,-1,0);
             this.verticalAxis = 1;
         }else{
             this.vertical = 0;

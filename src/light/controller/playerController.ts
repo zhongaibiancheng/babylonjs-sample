@@ -33,9 +33,12 @@ export default class PlayerController extends TransformNode {
     private static readonly JUMP_FORCE: number = 0.80;
     private static readonly GRAVITY: number = -2.8;
     private static readonly ORIGINAL_TILT: Vector3 = new Vector3(0.5934119456780721, 0, 0);
-    private static readonly DOWN_TILT: Vector3 = new Vector3(0.8290313946973066, 0, 0);
-    private static readonly DASH_TIME: number = 10; //how many frames the dash lasts
-    private static readonly DASH_FACTOR: number = 2.5;
+    // private static readonly DOWN_TILT: Vector3 = new Vector3(0.8290313946973066, 0, 0);
+    // private static readonly DASH_TIME: number = 10; //how many frames the dash lasts
+    // private static readonly DASH_FACTOR: number = 2.5;
+
+    //角色移动速度
+    private _move_speed:number =0;
 
     private _gravity: Vector3 = new Vector3();
     private _lastGroundPos: Vector3 = new Vector3();
@@ -167,18 +170,29 @@ export default class PlayerController extends TransformNode {
     }
     private _updateFromControll(): void {
         this._delta_time = this.scene.getEngine().getDeltaTime() / 1000.0;
+
+        //左转或者右转
         this._h = this._input.horizontal;
+        console.log("左转或者右转="+this._h);
+        //前进或者后退
         this._v = this._input.vertical;
 
         this._moveDirection = Vector3.Zero();
 
+        // this._move_speed += this._v;
+
+        let originalOrientation = new Vector3(0, 0, 1);
+        let orientation = this.mesh.getDirection(originalOrientation);
+        orientation.normalize();
+        this._moveDirection = orientation.scale(this._v);
+
         //--DASHING--
         //limit dash to once per ground/platform touch
         //can only dash when in the air
-        if (this._input.dashing && !this._dashPressed && this._canDash && !this._grounded) {
-            this._canDash = false;
-            this._dashPressed = true;
-        }
+        // if (this._input.dashing && !this._dashPressed && this._canDash && !this._grounded) {
+        //     this._canDash = false;
+        //     this._dashPressed = true;
+        // }
 
         // let dashFactor = 1;
         // //if you're dashing, scale movement
@@ -192,32 +206,35 @@ export default class PlayerController extends TransformNode {
         //     this.dashTime++;
         // }
 
-        let fwd = this._camRoot.forward;
-        let right = this._camRoot.right;
+        // let fwd = this._camRoot.forward;
+        // let right = this._camRoot.right;
 
-        let fwd_vec3 = fwd.scaleInPlace(this._v);
-        let right_vec3 = right.scaleInPlace(this._h);
+        // let fwd_vec3 = fwd.scaleInPlace(this._v);
+        // let right_vec3 = right.scaleInPlace(this._h);
 
-        let dir = fwd_vec3.addInPlace(right_vec3);
-        let dir_nor = dir.normalize();
+        // let dir = fwd_vec3.addInPlace(right_vec3);
+        // let dir_nor = dir.normalize();
 
-        this._moveDirection = new Vector3(dir_nor.x, 0, dir_nor.z);
+        // this._moveDirection = new Vector3(dir_nor.x, 0, dir_nor.z);
 
-        this._inputAmt = Math.abs(this._h) + Math.abs(this._v);
-        if (this._inputAmt > 1) {
-            this._inputAmt = 1;
-        }
+        // this._inputAmt = Math.abs(this._h) + Math.abs(this._v);
+        // if (this._inputAmt > 1) {
+        //     this._inputAmt = 1;
+        // }
 
-        this._moveDirection.scaleInPlace(this._inputAmt * PlayerController.PLAYER_SPEED);
+        // this._moveDirection.scaleInPlace(this._inputAmt * PlayerController.PLAYER_SPEED);
     
         //检查是否旋转
-        let rot = new Vector3(this._input.horizontalAxis, 0, this._input.verticalAxis);
-        if (rot.length() === 0) {
+        
+
+        if(this._h === 0){
             return;
         }
+        let rot = new Vector3(orientation.x, 0, orientation.z);
 
-        let angle = Math.atan2(this._input.horizontalAxis, this._input.verticalAxis);
-        angle += this._camRoot.rotation.y;
+        let angle = Math.atan2(orientation.x, orientation.z);
+        angle += this._h;
+        // angle += this._camRoot.rotation.y;
         let targ = Quaternion.FromEulerAngles(0, angle, 0);
 
         this.mesh.rotationQuaternion = Quaternion.Slerp(
