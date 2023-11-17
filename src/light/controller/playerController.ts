@@ -7,7 +7,7 @@ import {
     Vector3, 
     Camera, 
     Quaternion, 
-    Ray, ActionManager, ExecuteCodeAction, AnimationGroup, ArcRotateCamera } from "@babylonjs/core";
+    Ray, ActionManager, ExecuteCodeAction, AnimationGroup, ArcRotateCamera, AxesViewer } from "@babylonjs/core";
 import InputController from './inputController';
 
 export default class PlayerController extends TransformNode {
@@ -33,9 +33,6 @@ export default class PlayerController extends TransformNode {
     private static readonly JUMP_FORCE: number = 0.80;
     private static readonly GRAVITY: number = -2.8;
     private static readonly ORIGINAL_TILT: Vector3 = new Vector3(0.5934119456780721, 0, 0);
-    // private static readonly DOWN_TILT: Vector3 = new Vector3(0.8290313946973066, 0, 0);
-    // private static readonly DASH_TIME: number = 10; //how many frames the dash lasts
-    // private static readonly DASH_FACTOR: number = 2.5;
 
     //角色移动速度
     private _move_speed:number =0;
@@ -70,6 +67,10 @@ export default class PlayerController extends TransformNode {
     private _dashPressed: boolean = false;
     private _canDash: boolean = false;
 
+    private _decceleration:Vector3;
+    private _acceleration:Vector3;
+    private _velocity:Vector3;
+
     public dashTime: number = 0;
 
     constructor(assets, scene: Scene,
@@ -79,14 +80,13 @@ export default class PlayerController extends TransformNode {
         this.scene = scene;
         this.scene.collisionsEnabled = true;
 
+        const axes = new AxesViewer(this.scene,5);
         this._setupPlayerCamera();
 
         this.mesh = assets;
         this.mesh.parent = this;
 
         this.mesh.actionManager = new ActionManager(this.scene);
-
-        // this.scene.getLightByName("sparklight").parent = this.scene.getTransformNodeByName("Empty");
 
         shadowGenerator.addShadowCaster(assets); //the player mesh will cast shadows
 
@@ -100,6 +100,10 @@ export default class PlayerController extends TransformNode {
         this._idle = animations[5];
         this._jump = animations[6];
         this._walk = animations[7];
+
+        this._decceleration = new Vector3(-0.0005, -0.0001, -50.0);
+        this._acceleration = new Vector3(1, 0.25, 50.0);
+        this._velocity = new Vector3(0, 0, 0);
 
         this.mesh.actionManager.registerAction(new ExecuteCodeAction({
             trigger: ActionManager.OnIntersectionEnterTrigger,
@@ -120,8 +124,8 @@ export default class PlayerController extends TransformNode {
         if (!this._dashPressed && !this._isFalling && !this._jumped
             && (this._input.inputMap["ArrowUp"]
                 || this._input.inputMap["ArrowDown"]
-                || this._input.inputMap["ArrowLeft"]
-                || this._input.inputMap["ArrowRight"]
+                // || this._input.inputMap["ArrowLeft"]
+                // || this._input.inputMap["ArrowRight"]
             )) {
             this._curAnims = this._walk;
         }
@@ -131,9 +135,6 @@ export default class PlayerController extends TransformNode {
         else if (!this._isFalling && this._grounded) {
             this._curAnims = this._idle;
         } 
-        else if (this._walking) {
-            this._curAnims = this._walk;
-        }
 
         //Animations
         if (this._curAnims != null && this._preAnims !== this._curAnims) {
@@ -168,83 +169,82 @@ export default class PlayerController extends TransformNode {
             return false;
         }
     }
+    
     private _updateFromControll(): void {
         this._delta_time = this.scene.getEngine().getDeltaTime() / 1000.0;
 
-        //左转或者右转
-        this._h = this._input.horizontal;
-        console.log("左转或者右转="+this._h);
-        //前进或者后退
-        this._v = this._input.vertical;
+        const velocity = this._velocity;
+        const frameDecceleration = new Vector3(
+            velocity.x * this._decceleration.x,
+            velocity.y * this._decceleration.y,
+            velocity.z * this._decceleration.z
+        );
+        frameDecceleration.scaleInPlace(this._delta_time);
+        frameDecceleration.z = Math.sign(frameDecceleration.z) * Math.min(
+            Math.abs(frameDecceleration.z), Math.abs(velocity.z));
 
-        this._moveDirection = Vector3.Zero();
+        velocity.addInPlace(frameDecceleration);
 
-        // this._move_speed += this._v;
+        let _Q = new Quaternion();
+        const _A = new Vector3();
+        let _R = this.mesh.rotationQuaternion;
 
-        let originalOrientation = new Vector3(0, 0, 1);
-        let orientation = this.mesh.getDirection(originalOrientation);
-        orientation.normalize();
-        this._moveDirection = orientation.scale(this._v);
+        const acc = this._acceleration.clone();
+        if (this._input.running) {
+            acc.scaleInPlace(2.0);
+        }
+        let forward = new Vector3(0, 0, -1);
 
-        //--DASHING--
-        //limit dash to once per ground/platform touch
-        //can only dash when in the air
-        // if (this._input.dashing && !this._dashPressed && this._canDash && !this._grounded) {
-        //     this._canDash = false;
-        //     this._dashPressed = true;
-        // }
+        if (this._input.forward) {
+            velocity.z += acc.z * this._delta_time;
+        }
+        if (this._input.backword) {
+            velocity.z -= acc.z * this._delta_time;
+        }
 
-        // let dashFactor = 1;
-        // //if you're dashing, scale movement
-        // if (this._dashPressed) {
-        //     if (this.dashTime > PlayerController.DASH_TIME) {
-        //         this.dashTime = 0;
-        //         this._dashPressed = false;
-        //     } else {
-        //         dashFactor = PlayerController.DASH_FACTOR;
-        //     }
-        //     this.dashTime++;
-        // }
+        if (this._input.left) {
+            _A.set(0, 1, 0);
+            _Q = Quaternion.RotationAxis(_A, 4.0 * -Math.PI * this._delta_time * this._acceleration.y);
+            _R = _R.multiply(_Q);
+        }
 
-        // let fwd = this._camRoot.forward;
-        // let right = this._camRoot.right;
+        if (this._input.right) {
+            _A.set(0, 1, 0);
+            _Q = Quaternion.RotationAxis(_A, 4.0 * Math.PI * this._delta_time * this._acceleration.y);
+            _R = _R.multiply(_Q);
+        }
 
-        // let fwd_vec3 = fwd.scaleInPlace(this._v);
-        // let right_vec3 = right.scaleInPlace(this._h);
-
-        // let dir = fwd_vec3.addInPlace(right_vec3);
-        // let dir_nor = dir.normalize();
-
-        // this._moveDirection = new Vector3(dir_nor.x, 0, dir_nor.z);
-
-        // this._inputAmt = Math.abs(this._h) + Math.abs(this._v);
-        // if (this._inputAmt > 1) {
-        //     this._inputAmt = 1;
-        // }
-
-        // this._moveDirection.scaleInPlace(this._inputAmt * PlayerController.PLAYER_SPEED);
-    
-        //检查是否旋转
+        //babylonjs quaternion.multiply 方法有问题，
+        //zero multiply一个不为零quaternion，结果为0
+        //这个运算应该是错的。
+        if(_R.length()===0){
+            this.mesh.rotationQuaternion = _Q;
+        }else{
+            this.mesh.rotationQuaternion = _R;
+        }
+        if(this._camRoot.rotationQuaternion.length() ===0){
+            this._camRoot.rotationQuaternion = _Q;
+        }else{
+            this._camRoot.rotationQuaternion = this._camRoot.rotationQuaternion.multiply(_Q);
+        }
         
-
-        if(this._h === 0){
+        //静止状态
+        if(velocity.length() === 0){
+            this._moveDirection = Vector3.Zero();
             return;
         }
-        let rot = new Vector3(orientation.x, 0, orientation.z);
+        
+        if(forward.length() !==0){
+            forward = forward.applyRotationQuaternion(this.mesh.rotationQuaternion);
+            forward.normalize();
 
-        let angle = Math.atan2(orientation.x, orientation.z);
-        angle += this._h;
-        // angle += this._camRoot.rotation.y;
-        let targ = Quaternion.FromEulerAngles(0, angle, 0);
+            forward.scaleInPlace(velocity.z * this._delta_time);
 
-        this.mesh.rotationQuaternion = Quaternion.Slerp(
-            this.mesh.rotationQuaternion,
-            targ,
-            10 * this._delta_time);
-
+            this._moveDirection = forward;
+        }
         return;
     }
-
+    
     private _updateGroundDetection(): void {
         const is_ground = this._isGrounded();
 
@@ -319,7 +319,13 @@ export default class PlayerController extends TransformNode {
         // }
 
         let centerPlayer = this.mesh.position.y + 2;
-        this._camRoot.position = Vector3.Lerp(this._camRoot.position, new Vector3(this.mesh.position.x, centerPlayer, this.mesh.position.z), 0.4);
+        this._camRoot.position = Vector3.Lerp(
+            this._camRoot.position, 
+            new Vector3(this.mesh.position.x, centerPlayer, this.mesh.position.z), 
+        0.4);
+
+        //需要旋转照相机
+        console.log(this._camRoot.position);
     }
 
     private _beforeRenderUpdate(): void {
@@ -338,13 +344,10 @@ export default class PlayerController extends TransformNode {
     }
 
     private _setupPlayerCamera(): Camera {
-        //root camera parent that handles positioning of the camera to follow the player
         this._camRoot = new TransformNode("root");
-        this._camRoot.position = new Vector3(0, 0, 0); //initialized at (0,0,0)
-        //to face the player from behind (180 degrees)
-        this._camRoot.rotation = new Vector3(0, Math.PI, 0);
+        this._camRoot.position = new Vector3(0, 0, 0);
+        this._camRoot.rotationQuaternion = Quaternion.Zero();
 
-        //rotations along the x-axis (up/down tilting)
         let yTilt = new TransformNode("ytilt");
         //adjustments to camera view to point down at our player
         yTilt.rotation = PlayerController.ORIGINAL_TILT;
@@ -353,21 +356,12 @@ export default class PlayerController extends TransformNode {
 
         //our actual camera that's pointing at our root's position
         this.camera = new UniversalCamera("cam", new Vector3(0, 0, -30), this.scene);
-        // this.camera = new ArcRotateCamera(
-        //     "cam",
-        //     0,
-        //     0,
-        //     0,
-        //     Vector3.Zero(),
-        //     this._scene
-        // )
-        // this.camera.position = new Vector3(20,20,20);
         this.camera.lockedTarget = this._camRoot.position;
         this.camera.fov = 0.47350045992678597;
         this.camera.parent = yTilt;
 
         this.scene.activeCamera = this.camera;
-        // this.camera.attachControl();
+
         return this.camera;
     }
 

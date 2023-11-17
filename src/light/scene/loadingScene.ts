@@ -17,7 +17,7 @@ export default class LoadingScene extends BaseScene{
         super(engine,scene);
     }
     async init(params:SceneParams|undefined):Promise<Scene>{
-        console.log("*start game scene *****");
+
         this._engine.displayLoadingUI();
         //disabled any input because loading assets
         this._scene.detachControl();
@@ -41,12 +41,9 @@ export default class LoadingScene extends BaseScene{
         next.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
         next.width = "64px";
         next.height = "64px";
-        // next.top = "-3%";
-        // next.left = "-12%";
-        // next.isVisible = false;
+
         guiMenu.addControl(next);
 
-        
         next.onPointerUpObservable.add(() => {
             this._scene.detachControl();
             this._engine.displayLoadingUI(); //if the game hasn't loaded yet, we'll see a loading screen

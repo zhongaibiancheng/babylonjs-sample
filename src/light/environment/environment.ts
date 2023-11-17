@@ -131,6 +131,8 @@ export default class Environment{
 
         const env = result.meshes[0];
 
+        // env.rotation.y = Math.PI;
+
         env.computeWorldMatrix(true);
 
         const allMeshes = env.getChildMeshes();
@@ -138,6 +140,11 @@ export default class Environment{
         allMeshes.forEach(m=>{
             m.checkCollisions = true;
             m.receiveShadows = true;
+
+            if(m.name.includes("wall_")){
+                m.isVisible = false;
+                m.checkCollisions = true;
+            }
 
             if(m.name === 'ground'){
                 m.isPickable = true;
@@ -206,7 +213,7 @@ export default class Environment{
         outer.ellipsoid = new Vector3(1, 1.5, 1);
         outer.ellipsoidOffset = new Vector3(0, 1.5, 0);
 
-        outer.rotationQuaternion = new Quaternion(0, 0, 0, 0); // rotate the player mesh 180 since we want to see the back of the player
+        outer.rotationQuaternion = new Quaternion(0, 1, 0, 0);
 
         const result = await SceneLoader.ImportMeshAsync(
             null, 
@@ -216,6 +223,8 @@ export default class Environment{
 
         const root = result.meshes[0];
         root.scaling.setAll(.1);
+        root.computeWorldMatrix();
+
         const animations = result.animationGroups;
 
         //body is our actual player mesh
