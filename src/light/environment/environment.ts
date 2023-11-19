@@ -1,17 +1,22 @@
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
-import Ammo from 'ammojs-typed';
+// import Ammo from 'ammojs-typed';
+import * as CANNON from 'cannon-es'
+
 import { 
     Scene, 
-    AmmoJSPlugin,
+    // AmmoJSPlugin,
     Vector3, MeshBuilder, 
     Matrix,
     Quaternion,
     SceneLoader,
     PhysicsImpostor,
     PointerEventTypes,
-    Mesh} from "@babylonjs/core";
+    Mesh,
+    CannonJSPlugin,
+    AmmoJSPlugin} from "@babylonjs/core";
+import FireBall from "../weapon/fireball";
 
 /**资源文件目录 */
 const ASSETS_PATH = "./light/scene/";
@@ -25,9 +30,11 @@ export default class Environment{
     }
 
     private async _setPhysics(){
-        const ammo = await Ammo();
-        const physics = new AmmoJSPlugin(true,ammo);
-        
+        // const ammo = await Ammo();
+        // const physics = new AmmoJSPlugin(true,ammo);
+        // const cannon = await new CANNON();
+        window.CANNON = CANNON;
+        const physics = new CannonJSPlugin();
         this._scene.enablePhysics(new Vector3(0,-9.8,0),physics);
     }
     public async load(){
@@ -38,13 +45,16 @@ export default class Environment{
         });
 
         this._setPhysics().then(()=>{
+            //生成武器
+            // const fireball = new FireBall(this._scene);
+
             this._loadRock().then(rock=>{
                 for(let i=0;i<4;i++){
                     const root = rock.root.clone();
 
                     root.position.x = 4*Math.sin(90*i/180*Math.PI);
                     root.position.z = 4*Math.cos(90*i/180*Math.PI);
-                    root.position.y = 1;
+                    root.position.y = 1.5;
 
                     root.scaling.setAll(0.2);
                     const fractures = [];
@@ -69,7 +79,8 @@ export default class Environment{
 
                             mesh.physicsImpostor = new PhysicsImpostor(
                                 mesh,
-                                PhysicsImpostor.ConvexHullImpostor,
+                                PhysicsImpostor.BoxImpostor,
+                                // PhysicsImpostor.ConvexHullImpostor,
                                 {
                                     mass: Math.random()*2,
                                     friction: 1,
@@ -77,15 +88,18 @@ export default class Environment{
                                     nativeOptions: {},
                                     ignoreParent: true,
                                     disableBidirectionalTransformation: false
-                                }
+                                },
+                                this._scene
                             );
-                            mesh.physicsImpostor.physicsBody.setActivationState(5);
+                            // mesh.physicsImpostor.physicsBody.setActivationState(5);
+                            mesh.physicsImpostor.sleep();
                             fractures.push(mesh);
                         }
                     }
                     outer.metadata = {
                         fractures:fractures
                     }
+
                 }
                 rock.root.dispose();
             });
@@ -95,7 +109,9 @@ export default class Environment{
                 PhysicsImpostor.BoxImpostor,
                 {
                     mass:0
-                });
+                },
+                this._scene
+                );
         });
 
         this._scene.onPointerObservable.add((pointerInfo)=>{
@@ -112,15 +128,16 @@ export default class Environment{
                                     for(let i=0;i<fractures.length;i++){
                                         let mesh = fractures[i];
 
-                                        mesh.physicsImpostor.physicsBody.setActivationState(1);
-                                        mesh.physicsImpostor.forceUpdate();
+                                        // mesh.physicsImpostor.physicsBody.setActivationState(1);
+                                        mesh.physicsImpostor.wakeUp();
+                                        // mesh.physicsImpostor.forceUpdate();
                                     }
 
                                     setTimeout(()=>{
                                         outer.dispose();
-                                        fractures.forEach(element => {
-                                            element.dispose();
-                                        });
+                                        // fractures.forEach(element => {
+                                        //     element.dispose();
+                                        // });
                                     },3000);
                                 }
                             }

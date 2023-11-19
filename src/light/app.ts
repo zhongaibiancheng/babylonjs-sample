@@ -12,7 +12,7 @@ import StartScene from './scene/startScene';
 import LoadingScene from './scene/loadingScene';
 import GameScene from "./scene/gameScene";
 import Environment from "./environment/environment";
-
+// window.CANNON = require('cannon');
 enum State{
     START =0,
     GAME =1,
@@ -31,6 +31,7 @@ class App{
     _animations:Array<AnimationGroup>;
 
     constructor(){
+       
         Engine.CollisionsEpsilon = 0.0000005;
         this._canvas = this._createCanvas();
         this._engine = new Engine(this._canvas,true);

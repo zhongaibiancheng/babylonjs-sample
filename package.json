@@ -33,7 +33,8 @@
     "@babylonjs/core": "^6.24.0",
     "@babylonjs/inspector": "^6.24.0",
     "@babylonjs/materials": "^6.24.0",
-    "recast-detour": "^1.6.2",
-    "ammojs-typed": "^1.0.6"
+    "ammojs-typed": "^1.0.6",
+    "cannon-es": "^0.20.0",
+    "recast-detour": "^1.6.2"
   }
 }

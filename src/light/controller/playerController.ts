@@ -124,9 +124,6 @@ export default class PlayerController extends TransformNode {
      */
     public attachWeapon(weapon:Weapon){
         this._weapon = weapon;
-        console.log("将武器添加到player身体上");
-        console.log(this._weapon);
-
         this._weapon.attachToPlayer(this.mesh);
     }
     public attack(target:Mesh){
