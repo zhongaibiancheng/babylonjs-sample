@@ -31,6 +31,7 @@ class App{
     _animations:Array<AnimationGroup>;
 
     constructor(){
+        Engine.CollisionsEpsilon = 0.0000005;
         this._canvas = this._createCanvas();
         this._engine = new Engine(this._canvas,true);
         this._scene = new Scene(this._engine);

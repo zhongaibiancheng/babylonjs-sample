@@ -16,6 +16,7 @@ import {
 /**资源文件目录 */
 const ASSETS_PATH = "./light/scene/";
 const ASSETS_PATH_MODELS = "./light/models/";
+
 export default class Environment{
     private _scene:Scene;
 
@@ -88,6 +89,13 @@ export default class Environment{
                 }
                 rock.root.dispose();
             });
+            const m = this._scene.getMeshByName("ground");
+            m.physicsImpostor = new PhysicsImpostor(
+                m,
+                PhysicsImpostor.BoxImpostor,
+                {
+                    mass:0
+                });
         });
 
         this._scene.onPointerObservable.add((pointerInfo)=>{
@@ -131,9 +139,7 @@ export default class Environment{
 
         const env = result.meshes[0];
 
-        // env.rotation.y = Math.PI;
-
-        env.computeWorldMatrix(true);
+        // env.computeWorldMatrix(true);
 
         const allMeshes = env.getChildMeshes();
 
@@ -142,13 +148,14 @@ export default class Environment{
             m.receiveShadows = true;
 
             if(m.name.includes("wall_")){
-                m.isVisible = false;
+                m.isVisible = true;
                 m.checkCollisions = true;
             }
 
             if(m.name === 'ground'){
                 m.isPickable = true;
                 m.checkCollisions = true;
+
             }
 
             if(m.name.includes("collision")){

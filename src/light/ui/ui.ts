@@ -1,6 +1,9 @@
 import { Camera, Effect, PostProcess, Scene } from "@babylonjs/core";
 import { TextBlock, StackPanel, AdvancedDynamicTexture, Image, Button, Rectangle, Control, Grid } from "@babylonjs/gui";
 
+import Inventory from "../weapon/inventory";
+import FireBall from "../weapon/fireball";
+
 export default class GUI{
     private _scene:Scene;
     private _camera:Camera;
@@ -27,7 +30,7 @@ export default class GUI{
         rect.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
 
         //heath bar
-        const health_bar = new Image("background","./demo/sprites/health_bar.png");
+        const health_bar = new Image("background","./light/sprites/health_bar.png");
         health_bar.width="105px";
         health_bar.height = "24px";
         health_bar.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
@@ -41,7 +44,7 @@ export default class GUI{
         rect_coin.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
         rect_coin.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
 
-        const coin = new Image("bar_coin","./demo/sprites/bar_star.png");
+        const coin = new Image("bar_coin","./light/sprites/bar_star.png");
         coin.width="68px";
         coin.height = "25px";
         
@@ -72,7 +75,7 @@ export default class GUI{
         rect_diamond.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
         rect_diamond.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
 
-        const diamond = new Image("bar_diamond","./demo/sprites/bar_diamond.png");
+        const diamond = new Image("bar_diamond","./light/sprites/bar_diamond.png");
         diamond.width="68px";
         diamond.height = "25px";
         diamond.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
@@ -111,7 +114,7 @@ export default class GUI{
 
         const setting = Button.CreateImageOnlyButton(
             "setting", 
-            "./demo/sprites/button/setting.png");
+            "./light/sprites/button/setting.png");
         setting.thickness = 0;
         setting.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
         setting.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
@@ -122,7 +125,7 @@ export default class GUI{
 
         const user = Button.CreateImageOnlyButton(
             "setting", 
-            "./demo/sprites/button/user.png");
+            "./light/sprites/button/user.png");
         user.thickness = 0;
         user.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
         user.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
@@ -137,7 +140,7 @@ export default class GUI{
 
         const home = Button.CreateImageOnlyButton(
             "setting", 
-            "./demo/sprites/button/home.png");
+            "./light/sprites/button/home.png");
         home.thickness = 0;
         home.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
         home.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
@@ -163,7 +166,7 @@ export default class GUI{
         inventoryMenu.isVisible = true;
         inventoryMenu.cornerRadius = 10;
 
-        const image = new Image("inventory","./demo/sprites/board.png");
+        const image = new Image("inventory","./light/sprites/board.png");
         image.width = "568px";
         image.height = "376px";
         image.stretch = Image.STRETCH_EXTEND;
@@ -192,11 +195,11 @@ export default class GUI{
         rect_right.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
         rect_right.thickness = 0;
 
-        // const right = new Image("content_detail","./demo/sprites/content_detail.png");
+        // const right = new Image("content_detail","./light/sprites/content_detail.png");
         // rect_right.addControl(right);
         inventoryMenu.addControl(rect_right);
 
-        const item = new Image("inventory_item","./demo/sprites/inventory/item.png");
+        const item = new Image("inventory_item","./light/sprites/inventory/item.png");
 
         const grid = new Grid();
         grid.height = "240px";
@@ -205,17 +208,67 @@ export default class GUI{
             grid.addRowDefinition(0.2);
             grid.addColumnDefinition(0.2);
         }
-        const items=["sword.png","book.png","key.png","treasure.png"];
 
+        const items = [
+            {
+                id:1,
+                type:0,
+                key:"sword",
+                asset_path:'./light/sprites/inventory/',
+                asset_filename:'sword.png',
+                title:'正义之剑',
+                desc:'火焰剑',
+                desc_detail:'攻击:10'
+            },
+            {
+                id:2,
+                type:0,
+                key:"book_python",
+                asset_path:'./light/sprites/inventory/',
+                asset_filename:'book.png',
+                title:'Python入门',
+                desc:'python基础知识,讲解各种python的基本语法',
+                desc_detail:'学会了基本语法才能够进行冒险'
+            },
+            {
+                id:3,
+                type:1,
+                key:"fireball",
+                asset_path:'./light/sprites/inventory/',
+                asset_filename:'key.png',
+                title:'火焰球',
+                desc:'python基础知识,讲解各种python的基本语法',
+                desc_detail:'学会了基本语法才能够进行冒险'
+            },
+        ];
+
+        const controller = this._scene.getTransformNodeByName("player_controller");
         for(let i=0;i<5;i++){
             for(let j=0;j<5;j++){
                 grid.addControl(item.clone(),i,j);
 
                 if(i*5+j<items.length){
-                    const sword = new Image("sword","./demo/sprites/inventory/"+items[i*5+j]);
-                    sword.width = "25px";
-                    sword.height = "25px";
-                    grid.addControl(sword,i,j);
+                    const inventory_item = items[i*5+j];
+                    const inventory =Button.CreateImageOnlyButton(
+                            inventory_item.key, 
+                            inventory_item.asset_path+inventory_item.asset_filename);
+                    inventory.width = "25px";
+                    inventory.height = "25px";
+                    inventory.thickness = 0;
+
+                    grid.addControl(inventory,i,j);
+
+                    if(inventory_item.type === 1){//weapon
+                        if(inventory_item.key === 'fireball'){
+                            const fireball = new FireBall(this._scene);
+                            inventory.onPointerDownObservable.add(()=>{
+                                console.log(" click inventory now ********");
+                                // fireball.attachToPlayer((controller as any).mesh);
+                                (controller as any).attachWeapon(fireball);
+                            })
+                        }
+                    }
+
                 }
             }
         }
@@ -242,7 +295,7 @@ export default class GUI{
         button_rect.width = "150px";
         button_rect.height = "50px";
 
-        const close_btn = Button.CreateImageWithCenterTextButton("close","关闭","./demo/sprites/button/close.png");
+        const close_btn = Button.CreateImageWithCenterTextButton("close","关闭","./light/sprites/button/close.png");
 
         close_btn.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
         close_btn.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;

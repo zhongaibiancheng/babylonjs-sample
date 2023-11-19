@@ -1,0 +1,107 @@
+import { Color4, Mesh, MeshBuilder, ParticleSystem, PhysicsImpostor, Scene, Texture, Vector3 } from "@babylonjs/core";
+
+//用来控制火球的状态
+enum STATE{
+    //刚开始生成 可以随着player移动
+    STOP=1,
+
+    //朝着目标开始行进
+    RUNNING,
+
+    //撞击到了目标物
+    DEAD
+}
+
+export default class FireBall{
+    _scene:Scene;
+    _ball:Mesh;
+    _particle:ParticleSystem;
+
+    _player:Mesh;
+
+    _state:STATE;
+    _velocity:Vector3;
+
+    constructor(scene:Scene){
+        this._scene = scene;
+
+        this._state = STATE.STOP;
+        this._velocity = Vector3.Zero();
+
+        this._create();
+
+        this._scene.registerBeforeRender(()=>{
+            if(this._state === STATE.STOP){//
+
+            }else if(this._state === STATE.RUNNING){
+                this._ball.position.addInPlace(this._velocity);
+            }else if(this._state === STATE.DEAD){
+                this._velocity = Vector3.Zero();
+                this._ball.isVisible = false;
+                this._particle.stop();
+            }
+        })
+    }
+
+    public attachToPlayer(player:Mesh){
+        this._player = player;
+
+        this._particle.start();
+        this._ball.parent = player;
+        this._ball.position.y += 2;
+
+        this._state = STATE.STOP;
+    }
+    public attack(target:Mesh){
+        if(this._state === STATE.STOP){
+            var forward = new Vector3(0, 0, 1);
+            const facing = forward.applyRotationQuaternion(this._player.rotationQuaternion);
+            facing.normalize();
+
+            this._velocity = facing.scaleInPlace(0.5);
+            this._state = STATE.RUNNING;
+        }
+    }
+    private _create(){
+        this._ball = MeshBuilder.CreateSphere("fireball",{
+            diameter:0.1,segments:32});
+        this._ball.isVisible = false;
+
+        this._particle = this._createParticle();
+    }
+    
+    /**
+     * 生成火球particle
+     * 
+     */
+    private _createParticle(){
+        let pSystem = new ParticleSystem(
+            "fireball_particles", 
+            20000, 
+            this._scene);
+		pSystem.emitter = this._ball;
+		pSystem.blendMode = ParticleSystem.BLENDMODE_ONEONE;
+
+		pSystem.particleTexture = new Texture("./light/textures/flare.png", this._scene);
+		pSystem.minEmitBox = new Vector3(-0.2, -0.2, -0.2);
+		pSystem.maxEmitBox = new Vector3(0.2, 0.2, 0.2);
+		pSystem.color1 = new Color4(1.0, 0.05, 0.05, .9);
+		pSystem.color2 = new Color4(0.85, 0.05, 0, .9);
+		pSystem.colorDead = new Color4(.5, .02, 0, .5);
+		pSystem.minSize = 0.7;
+		pSystem.maxSize = 0.8;
+		pSystem.minLifeTime = 0.1;
+		pSystem.maxLifeTime = 0.15;
+		pSystem.emitRate = 500;
+		pSystem.gravity = new Vector3(0, 0, 0);
+		pSystem.direction1 = new Vector3(0, .05, 0);
+		pSystem.direction2 = new Vector3(0, -.05, 0);
+		pSystem.minAngularSpeed = 0.15;
+		pSystem.maxAngularSpeed = 0.25;
+		pSystem.minEmitPower = 0.5;
+		pSystem.maxEmitPower = 1;
+		pSystem.updateSpeed = 0.008;
+
+        return pSystem;
+    }
+}

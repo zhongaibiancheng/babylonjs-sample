@@ -7,7 +7,7 @@ import { ActionManager, ExecuteCodeAction, Scalar, Scene } from "@babylonjs/core
  * 
  */
 export default class InputController{
-    public inputMap:any;
+    private _inputMap:any;
 
     public jumpKeyDown:boolean = false;
     public running:boolean = false;
@@ -18,14 +18,18 @@ export default class InputController{
     public left:boolean = false;
     public right:boolean = false;
 
+    public attackKeys = {
+        E:false
+    };
+
     constructor(scene:Scene){
         scene.actionManager = new ActionManager(scene);
-        this.inputMap = {};
+        this._inputMap = {};
 
         scene.actionManager.registerAction(
             new ExecuteCodeAction(
                 ActionManager.OnKeyDownTrigger, (evt) => {
-                    this.inputMap[evt.sourceEvent.key] = 
+                    this._inputMap[evt.sourceEvent.key] = 
                     evt.sourceEvent.type == "keydown";
                 }
             )
@@ -33,7 +37,7 @@ export default class InputController{
         scene.actionManager.registerAction(
             new ExecuteCodeAction(
                 ActionManager.OnKeyUpTrigger, (evt) => {
-                    this.inputMap[evt.sourceEvent.key] = 
+                    this._inputMap[evt.sourceEvent.key] = 
                     evt.sourceEvent.type == "keydown";
                 }
             )
@@ -43,40 +47,46 @@ export default class InputController{
         })
     }
     _updateFromKeyboard(){
-        if(this.inputMap["ArrowLeft"]){
+        if(this._inputMap["ArrowLeft"]){
             this.left = true;
         }else {
             this.left = false;
         }
 
-        if(this.inputMap["ArrowRight"]){
+        if(this._inputMap["ArrowRight"]){
             this.right = true;
         }else{
             this.right = false;
         }
 
-        if(this.inputMap["ArrowUp"]){
+        if(this._inputMap["ArrowUp"]){
             this.forward = true;
         }else{
             this.forward = false;
         }
 
-        if(this.inputMap["ArrowDown"]){
+        if(this._inputMap["ArrowDown"]){
             this.backword = true;
         }else{
             this.backword = false;
         }
 
-        if(this.inputMap["Shift"]){
+        if(this._inputMap["Shift"]){
             this.running = true;
         }else{
             this.running = false;
         }
 
-        if(this.inputMap[" "]){
+        if(this._inputMap[" "]){
             this.jumpKeyDown = true;
         }else{
             this.jumpKeyDown = false;
+        }
+
+        if(this._inputMap["E"]||this._inputMap["e"]){
+            this.attackKeys.E = true;
+        }else{
+            this.attackKeys.E = false;
         }
     }
 }

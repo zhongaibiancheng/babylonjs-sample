@@ -9,6 +9,7 @@ import {
     Quaternion, 
     Ray, ActionManager, ExecuteCodeAction, AnimationGroup, ArcRotateCamera, AxesViewer } from "@babylonjs/core";
 import InputController from './inputController';
+import Weapon from "../weapon/weapon";
 
 export default class PlayerController extends TransformNode {
     public camera;
@@ -73,14 +74,16 @@ export default class PlayerController extends TransformNode {
 
     public dashTime: number = 0;
 
+    private _weapon:Weapon;
+
     constructor(assets, scene: Scene,
         shadowGenerator: ShadowGenerator, input?, animations?) {
-        super("player", scene);
+        super("player_controller", scene);
 
         this.scene = scene;
         this.scene.collisionsEnabled = true;
 
-        const axes = new AxesViewer(this.scene,5);
+        // const axes = new AxesViewer(this.scene,5);
         this._setupPlayerCamera();
 
         this.mesh = assets;
@@ -116,17 +119,32 @@ export default class PlayerController extends TransformNode {
     }
     /**
      * 
+     * 将武器添加到player身体上
+     * @param weapon 
+     */
+    public attachWeapon(weapon:Weapon){
+        this._weapon = weapon;
+        console.log("将武器添加到player身体上");
+        console.log(this._weapon);
+
+        this._weapon.attachToPlayer(this.mesh);
+    }
+    public attack(target:Mesh){
+        if(this._weapon){
+            this._weapon.attack(target);
+        }
+    }
+
+    /**
+     * 
      * 播放角色动画
      *
      * 
      */
     private _animatePlayer(): void {
         if (!this._dashPressed && !this._isFalling && !this._jumped
-            && (this._input.inputMap["ArrowUp"]
-                || this._input.inputMap["ArrowDown"]
-                // || this._input.inputMap["ArrowLeft"]
-                // || this._input.inputMap["ArrowRight"]
-            )) {
+            && (this._input.forward
+                || this._input.backword)) {
             this._curAnims = this._walk;
         }
         else if (this._jumped && !this._isFalling && !this._dashPressed) {
@@ -171,6 +189,10 @@ export default class PlayerController extends TransformNode {
     }
     
     private _updateFromControll(): void {
+
+        if(this._input.attackKeys.E){
+            this.attack(null);
+        }
         this._delta_time = this.scene.getEngine().getDeltaTime() / 1000.0;
 
         const velocity = this._velocity;
@@ -235,6 +257,7 @@ export default class PlayerController extends TransformNode {
         }
         
         if(forward.length() !==0){
+            //applyRotationQuaternion 旋转的四元祖信息
             forward = forward.applyRotationQuaternion(this.mesh.rotationQuaternion);
             forward.normalize();
 
@@ -323,9 +346,6 @@ export default class PlayerController extends TransformNode {
             this._camRoot.position, 
             new Vector3(this.mesh.position.x, centerPlayer, this.mesh.position.z), 
         0.4);
-
-        //需要旋转照相机
-        console.log(this._camRoot.position);
     }
 
     private _beforeRenderUpdate(): void {
