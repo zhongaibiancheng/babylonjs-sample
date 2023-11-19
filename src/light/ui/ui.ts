@@ -260,12 +260,12 @@ export default class GUI{
 
                     if(inventory_item.type === 1){//weapon
                         if(inventory_item.key === 'fireball'){
-                            // const fireball = new FireBall(this._scene);
-                            // inventory.onPointerDownObservable.add(()=>{
-                            //     console.log(" click inventory now ********");
-                            //     // fireball.attachToPlayer((controller as any).mesh);
-                            //     (controller as any).attachWeapon(fireball);
-                            // })
+                            const fireball = this._scene.getTransformNodeByName("fireball");
+
+                            inventory.onPointerDownObservable.add(()=>{
+                                (controller as any).attachWeapon(fireball);
+                            });
+
                         }
                     }
 

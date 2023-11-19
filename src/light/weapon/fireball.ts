@@ -1,4 +1,4 @@
-import { Color4, Mesh, MeshBuilder, ParticleSystem, PhysicsImpostor, Quaternion, Scene, Texture, Vector3 } from "@babylonjs/core";
+import { Color4, Mesh, MeshBuilder, ParticleSystem, PhysicsImpostor, Quaternion, Scene, Texture, TransformNode, Vector3 } from "@babylonjs/core";
 
 //用来控制火球的状态
 enum STATE{
@@ -12,17 +12,20 @@ enum STATE{
     DEAD
 }
 
-export default class FireBall{
-    _scene:Scene;
-    _ball:Mesh;
-    _particle:ParticleSystem;
+export default class FireBall extends TransformNode{
+    private _scene_mine:Scene;
+    private _ball:Mesh;
+    private _particle:ParticleSystem;
 
-    _player:Mesh;
+    private _player:Mesh;
 
-    _state:STATE;
-    _velocity:Vector3;
+    private _state:STATE;
+    private _velocity:Vector3;
+
+    public bullet:Mesh;
 
     constructor(scene:Scene){
+        super("fireball");
         this._scene = scene;
 
         this._state = STATE.STOP;
@@ -41,7 +44,6 @@ export default class FireBall{
                 }
             }else if(this._state === STATE.RUNNING){
                 this._ball.position.addInPlace(this._velocity);
-                // this._ball.moveWithCollisions(this._velocity);
             }else if(this._state === STATE.DEAD){
                 this._velocity = Vector3.Zero();
                 this._ball.isVisible = false;
@@ -59,8 +61,9 @@ export default class FireBall{
         this._ball.position.x = pos.x;
         this._ball.position.z = pos.z;
 
-        this._ball.position.y += 1.5;
+        this._ball.position.y = 1.4;
 
+        this._ball.physicsImpostor.sleep();
         this._state = STATE.STOP;
     }
     public attack(target:Mesh){
@@ -73,6 +76,7 @@ export default class FireBall{
             facing.normalize();
 
             this._velocity = facing.scaleInPlace(0.5);
+            this._ball.physicsImpostor.wakeUp();
             this._state = STATE.RUNNING;
         }
     }
@@ -80,11 +84,23 @@ export default class FireBall{
         this._ball = MeshBuilder.CreateSphere("fireball",{
             diameter:0.1,segments:32});
 
-        this._ball.isVisible = false;
+        this._ball.isVisible = true;
         this._ball.rotationQuaternion = Quaternion.Zero();
+
+        this.bullet = this._ball;
+
         this._particle = this._createParticle();
+
+        this._ball.physicsImpostor = new PhysicsImpostor(
+            this._ball,
+            PhysicsImpostor.SphereImpostor,
+            {
+                mass:0.1
+            },
+            this._scene);
+
+        this._ball.physicsImpostor.sleep();
     }
-    
     /**
      * 生成火球particle
      * 

@@ -46,7 +46,7 @@ export default class Environment{
 
         this._setPhysics().then(()=>{
             //生成武器
-            // const fireball = new FireBall(this._scene);
+            const fireball = new FireBall(this._scene);
 
             this._loadRock().then(rock=>{
                 for(let i=0;i<4;i++){
@@ -63,6 +63,37 @@ export default class Environment{
                     for(let child of root.getChildMeshes()){
                         if(child.name === ".Cube"){
                             outer = child;
+
+                            outer.physicsImpostor = new PhysicsImpostor(
+                                outer,
+                                PhysicsImpostor.BoxImpostor,
+                                {
+                                    mass:0.1,
+                                    ignoreParent: true,
+                                },
+                                this._scene);
+                            outer.physicsImpostor.sleep();
+
+                            outer.physicsImpostor.registerOnPhysicsCollide(
+                                fireball.bullet.physicsImpostor, 
+                                (main, collided)=>{
+                                    console.log("fireball hit the rock now ************");
+                                    outer.isVisible = false;
+                                    
+                                    const fractures = outer.metadata.fractures;
+                                    for(let i=0;i<fractures.length;i++){
+                                        let mesh = fractures[i];
+
+                                        mesh.physicsImpostor.wakeUp();
+                                    }
+
+                                    setTimeout(()=>{
+                                        outer.dispose();
+                                        fractures.forEach(element => {
+                                            element.dispose();
+                                        });
+                                    },3000);
+                            });
                             continue;
                         }
                         if(child.name.includes("Cube_cell")){//fracture
@@ -91,7 +122,6 @@ export default class Environment{
                                 },
                                 this._scene
                             );
-                            // mesh.physicsImpostor.physicsBody.setActivationState(5);
                             mesh.physicsImpostor.sleep();
                             fractures.push(mesh);
                         }

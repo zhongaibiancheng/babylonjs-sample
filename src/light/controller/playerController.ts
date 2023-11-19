@@ -123,6 +123,7 @@ export default class PlayerController extends TransformNode {
      * @param weapon 
      */
     public attachWeapon(weapon:Weapon){
+        
         this._weapon = weapon;
         this._weapon.attachToPlayer(this.mesh);
     }
