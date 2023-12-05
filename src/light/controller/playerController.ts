@@ -134,11 +134,9 @@ export default class PlayerController extends TransformNode {
     }
 
     public attack(target:Mesh){
-        console.log("begin starting attack ******");
         if(this._weapon && this._weapon.attackable()){
             this._weapon.attack(target);
         }else if(this._weapon){
-            console.log("second attack ******");
             const weapon = new FireBall(this._scene);
             this.attachWeapon(weapon as any);
             this.attack(null);

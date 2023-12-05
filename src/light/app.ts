@@ -35,7 +35,9 @@ class App{
     _animations:Array<AnimationGroup>;
 
     _level:number = 0;
+    _starting_entrance:Boolean = false;
     constructor(){
+        this._starting_entrance = false;
         Engine.CollisionsEpsilon = 0.0000005;
         this._canvas = this._createCanvas();
         this._engine = new Engine(this._canvas,true);
@@ -121,7 +123,6 @@ class App{
     }
 
     async _setup_game(){
-        console.log("start setup game");
         this._game_scene = new Scene(this._engine);
 
         this._environment = new Environment();
@@ -140,7 +141,11 @@ class App{
             trigger: ActionManager.OnIntersectionEnterTrigger,
             parameter: this._game_scene.getMeshByName("entrance_arrow")
         }, async () => {
-            console.log("collision now **********");
+            if(this._starting_entrance){
+                return;
+            }
+            this._starting_entrance = true;
+            
             this._engine.displayLoadingUI();
             this._game_scene = new Scene(this._engine);
             this._game_scene.clearColor = new Color4(0,0,1,1);

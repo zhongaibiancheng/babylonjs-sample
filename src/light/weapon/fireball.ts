@@ -43,7 +43,7 @@ export default class FireBall extends TransformNode{
                     this._ball.position.z = pos.z;
                 }
             }else if(this._state === STATE.RUNNING){
-                this._ball.position.addInPlace(this._velocity);
+                // this._ball.position.addInPlace(this._velocity);
             }else if(this._state === STATE.DEAD){
                 this._velocity = Vector3.Zero();
                 this._ball.isVisible = false;
@@ -80,9 +80,11 @@ export default class FireBall extends TransformNode{
             let facing = forward.applyRotationQuaternion(this._player.rotationQuaternion);
             facing.normalize();
 
-            this._velocity = facing.scaleInPlace(0.5);
+            this._velocity = facing.scaleInPlace(5);
             this._ball.physicsImpostor.wakeUp();
             this._state = STATE.RUNNING;
+            this._ball.physicsImpostor.applyImpulse(this._velocity,this._ball.getAbsolutePosition());
+
         }
     }
     private _create(){
