@@ -10,7 +10,8 @@ interface SceneParams{
     game_scene?:Scene,
     player_mesh?:Mesh,
     environment?:Environment,
-    animations?:Array<AnimationGroup>
+    animations?:Array<AnimationGroup>,
+    level?:number
 }
 
 export {SceneParams};

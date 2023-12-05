@@ -2,12 +2,8 @@ import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
 import { 
-    Engine, Scene, ArcRotateCamera, 
-    FreeCamera,
-    Vector3, HemisphericLight, Mesh, MeshBuilder, 
-    Color4, 
-    Camera,
-    CubeMapToSphericalPolynomialTools} from "@babylonjs/core";
+    Engine, 
+    Scene} from "@babylonjs/core";
 
 import {SceneParams} from '../utils/const';
 

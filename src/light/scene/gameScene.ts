@@ -7,16 +7,15 @@ import {
     Color4,
     HemisphericLight,
     Mesh,
-    PointLight,
-    Color3,
-    ShadowGenerator,
     AnimationGroup,
     Animation,
     SpriteManager,
     Sprite,
-    MeshBuilder
+    MeshBuilder,
+    FreeCamera
 } from "@babylonjs/core";
-import { AdvancedDynamicTexture} from "@babylonjs/gui";
+
+import { AdvancedDynamicTexture,Button,Control} from "@babylonjs/gui";
 
 import BaseScene from './baseScene'
 import {SceneParams} from '../utils/const';
@@ -35,27 +34,23 @@ export default class GameScene extends BaseScene{
 
     constructor(engine:Engine,scene:Scene){
         super(engine,scene);
-    }
-    private async _initializeGameAsync(scene): Promise<void> {
-        var light0 = new HemisphericLight("HemiLight", new Vector3(0, 1, 0), scene);
 
-        const light = new PointLight("sparklight", new Vector3(0, 0, 0), scene);
-        light.diffuse = new Color3(0.08627450980392157, 0.10980392156862745, 0.15294117647058825);
-        light.intensity = 35;
-        light.radius = 1;
+        this._engine = engine;
+    }
     
-        const shadowGenerator = new ShadowGenerator(1024, light);
-        shadowGenerator.darkness = 0.4;
-    
+    private async _initializeGameAsync(scene): Promise<void> {
+        var light0 = new HemisphericLight("HemiLight", new Vector3(0, 1, 0), scene);    
         const input = new InputController(scene);
 
         //Create the player
         this._player = new PlayerController(
             this._player_mesh, 
             scene, 
-            shadowGenerator,
+            // shadowGenerator,
+            undefined,
             input,
-            this._animations
+            this._animations,
+            this._engine
             );
         
         this._player.activatePlayerCamera();
@@ -64,27 +59,29 @@ export default class GameScene extends BaseScene{
     async init(params:SceneParams|undefined):Promise<Scene>{
         this._player_mesh = params.player_mesh;
         this._animations = params.animations;
+
+        this._engine.displayLoadingUI();
         this._scene.detachControl();
 
         const scene = params.game_scene;
-        // scene.clearColor = new Color4(0.01568627450980392, 0.01568627450980392, 0.20392156862745098); // a color that fit the overall color scheme better
         scene.clearColor = new Color4(0, 0, 0);
-        const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
-        playerUI.idealHeight = 720;
+        // const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
+        // playerUI.idealHeight = 720;
 
         await this._initializeGameAsync(scene);
         
+        scene.getMeshByName("outer").position = scene.getTransformNodeByName("start_pos").getAbsolutePosition(); //move the player to the start position
+
+        if(params.level === 0){//toturial 
+            this._createSprite(scene);
+            this._createParticle(scene);
+            this._waveBoard(scene);
+        }else if(params.level === 1){
+
+        }
          //--WHEN SCENE IS FINISHED LOADING--
         await scene.whenReadyAsync();
-        scene.getMeshByName("outer").position = scene.getTransformNodeByName("start_pos").getAbsolutePosition(); //move the player to the start position
-        
-        this._createSprite(scene);
-        
-        this._createParticle(scene);
-
-        this._waveBoard(scene);
-        
-        const gui = new GUI(scene,this._player.camera);
+        this._engine.hideLoadingUI();
 
         return scene;
     }
@@ -107,7 +104,6 @@ export default class GameScene extends BaseScene{
 
         //创建wood particle
         const wood = scene.getTransformNodeByName("wood_pos");
-        // wood.computeWorldMatrix(true);
         const wood_particle = creator.createWoodParticle(wood);
         wood_particle.start();
     }

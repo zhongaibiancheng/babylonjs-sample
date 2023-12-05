@@ -7,7 +7,7 @@ import {
     Vector3, 
     Camera, 
     Quaternion, 
-    Ray, ActionManager, ExecuteCodeAction, AnimationGroup, ArcRotateCamera, AxesViewer } from "@babylonjs/core";
+    Ray, ActionManager, ExecuteCodeAction, AnimationGroup, ArcRotateCamera, AxesViewer, Color3, Color4, Engine, HemisphericLight, FreeCamera, MeshBuilder } from "@babylonjs/core";
 import InputController from './inputController';
 import Weapon from "../weapon/weapon";
 
@@ -76,11 +76,16 @@ export default class PlayerController extends TransformNode {
 
     private _weapon:Weapon;
 
+    private _engine:Engine;
     constructor(assets, scene: Scene,
-        shadowGenerator: ShadowGenerator, input?, animations?) {
+        shadowGenerator: ShadowGenerator,
+         input?, animations?,
+         engine?:Engine) {
         super("player_controller", scene);
 
         this.scene = scene;
+        this._engine = engine;
+
         this.scene.collisionsEnabled = true;
 
         // const axes = new AxesViewer(this.scene,5);
@@ -89,9 +94,9 @@ export default class PlayerController extends TransformNode {
         this.mesh = assets;
         this.mesh.parent = this;
 
-        this.mesh.actionManager = new ActionManager(this.scene);
+        // this.mesh.actionManager = new ActionManager(this.scene);
 
-        shadowGenerator.addShadowCaster(assets); //the player mesh will cast shadows
+        // shadowGenerator.addShadowCaster(assets); //the player mesh will cast shadows
 
         this._input = input;
 
@@ -108,12 +113,12 @@ export default class PlayerController extends TransformNode {
         this._acceleration = new Vector3(1, 0.25, 50.0);
         this._velocity = new Vector3(0, 0, 0);
 
-        this.mesh.actionManager.registerAction(new ExecuteCodeAction({
-            trigger: ActionManager.OnIntersectionEnterTrigger,
-            parameter: this.scene.getMeshByName("ground")
-        }, () => {
-            this.mesh.position.copyFrom(this._lastGroundPos);
-        }));
+        // this.mesh.actionManager.registerAction(new ExecuteCodeAction({
+        //     trigger: ActionManager.OnIntersectionEnterTrigger,
+        //     parameter: this.scene.getMeshByName("ground")
+        // }, () => {
+        //     this.mesh.position.copyFrom(this._lastGroundPos);
+        // }));
 
         this._setUpAnimations();
     }
@@ -123,10 +128,10 @@ export default class PlayerController extends TransformNode {
      * @param weapon 
      */
     public attachWeapon(weapon:Weapon){
-        
         this._weapon = weapon;
         this._weapon.attachToPlayer(this.mesh);
     }
+
     public attack(target:Mesh){
         if(this._weapon){
             this._weapon.attack(target);

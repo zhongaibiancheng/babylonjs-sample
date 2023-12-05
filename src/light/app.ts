@@ -6,7 +6,11 @@ import {
     Color3,
     Vector3, HemisphericLight, Mesh, MeshBuilder, 
     AnimationGroup,
-    Color4} from "@babylonjs/core";
+    Color4,
+    ExecuteCodeAction,
+    ActionManager,
+    FreeCamera,
+    Tools} from "@babylonjs/core";
 
 import StartScene from './scene/startScene';
 import LoadingScene from './scene/loadingScene';
@@ -30,8 +34,8 @@ class App{
     _player_mesh:Mesh;
     _animations:Array<AnimationGroup>;
 
+    _level:number = 0;
     constructor(){
-       
         Engine.CollisionsEpsilon = 0.0000005;
         this._canvas = this._createCanvas();
         this._engine = new Engine(this._canvas,true);
@@ -73,8 +77,9 @@ class App{
                 default:
                     break;
             }
-        })
+        });
     }
+    
     async _gotoStart(){
         const start = new StartScene(this._engine,this._scene);
         const scene = await start.init({
@@ -85,6 +90,7 @@ class App{
         this._scene = scene;
         this._state = State.START;
     }
+
     async _gotoLoading(){
         const loading = new LoadingScene(this._engine,this._scene);
         const scene = await loading.init({
@@ -96,6 +102,7 @@ class App{
         this._scene = scene;
         this._state = State.LOADINGSCENE;
     }
+    
     async _gotoGame(){
         const game = new GameScene(this._engine,this._scene);
         game.init({
@@ -104,6 +111,7 @@ class App{
             player_mesh:this._player_mesh,
             animations:this._animations,
             environment:this._environment,
+            level:this._level
         });
 
         this._scene.dispose();
@@ -111,24 +119,72 @@ class App{
         this._state = State.GAME;
         this._scene.attachControl();
     }
-    // async _gotoLose(){
-    //     const lose = new LoseScene(this._engine,this._scene);
-    //     const scene = await lose.init({callback:this._gotoStart.bind(this)});
 
-    //     this._scene.dispose();
-    //     this._scene = scene;
-    //     this._state = State.LOSE;
-    //     this._scene.attachControl();
-    // }
     async _setup_game(){
+        console.log("start setup game");
         this._game_scene = new Scene(this._engine);
-        //--CREATE ENVIRONMENT--
-        const environment = new Environment(this._game_scene);
-        this._environment = environment;
+
+        this._environment = new Environment();
+        this._environment.setScene(this._game_scene);
+
         await this._environment.load(); //environment
         const result = await this._environment.loadCharacterAssets();
+
         this._player_mesh = result.outer;
         this._animations  = result.animations;
+        if(!this._player_mesh.actionManager){
+            this._player_mesh.actionManager = new ActionManager(this._game_scene);
+        }
+        this._player_mesh.actionManager.registerAction(
+            new ExecuteCodeAction({
+            trigger: ActionManager.OnIntersectionEnterTrigger,
+            parameter: this._game_scene.getMeshByName("entrance_arrow")
+        }, async () => {
+            this._engine.displayLoadingUI();
+            this._game_scene = new Scene(this._engine);
+            this._game_scene.clearColor = new Color4(0,0,1,1);
+
+            this._environment.setScene(this._game_scene);
+
+            const camera = new FreeCamera("camera2",
+            new Vector3(0,10,0),this._game_scene);
+            camera.setTarget(new Vector3(0,0,0));
+
+            const result =  await this._environment.loadCharacterAssets();
+            this._player_mesh = result.outer;
+            this._animations  = result.animations;
+
+            if(!this._player_mesh.actionManager){
+                this._player_mesh.actionManager = new ActionManager(this._game_scene);
+            }
+
+            this._level = this._level + 1;
+            console.log("level ===="+this._level);
+            
+            await this._environment.load(this._level); //environment
+            
+            const game = new GameScene(this._engine,this._game_scene);
+
+            await game.init({
+                callback:undefined,
+                game_scene:this._game_scene,
+                player_mesh:this._player_mesh,
+                animations:this._animations,
+                environment:this._environment,
+                level:this._level
+            });
+
+            var light0 = new HemisphericLight("HemiLight", new Vector3(0, 1, 0), this._game_scene);    
+            this._scene.dispose();
+            this._scene = this._game_scene;
+            this._state = State.GAME;
+            this._scene.attachControl();
+
+            await this._scene.whenReadyAsync();
+            this._engine.hideLoadingUI();
+        }));
+
+        console.log("finished setup game");
     }
 }
 /* eslint-disable */

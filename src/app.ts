@@ -44,5 +44,8 @@
 // import FireBall from './xianglongshibazhang/fireball';
 // const fireball = new FireBall();
 
-import Shatter from './shatter/shatter';
-const shatter = new Shatter();
+// import Shatter from './shatter/shatter';
+// const shatter = new Shatter();
+
+import LoadingScene from './loadingscene/loadingscene';
+const lodingscene = new LoadingScene();

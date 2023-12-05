@@ -1,0 +1,21 @@
+<html>
+    <head>
+<script src="./hello.js"></script>
+    </head>
+    <body>
+
+        <button onclick="test()">click it</button>
+    </body>
+    <script>
+        function test(){
+            console.log("click button now")
+            let p = promise();
+            console.log(p);
+            promise().then((data)=>{
+                console.log(data);
+            },(error)=>{
+                console.log(error);
+            })
+        }
+    </script>
+</html>

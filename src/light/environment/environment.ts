@@ -15,7 +15,13 @@ import {
     PointerEventTypes,
     Mesh,
     CannonJSPlugin,
-    AmmoJSPlugin} from "@babylonjs/core";
+    AmmoJSPlugin,
+    SpriteManager,
+    Sprite,
+    StandardMaterial,
+    Texture,
+    Color3,
+    VertexData} from "@babylonjs/core";
 import FireBall from "../weapon/fireball";
 
 /**资源文件目录 */
@@ -25,168 +31,191 @@ const ASSETS_PATH_MODELS = "./light/models/";
 export default class Environment{
     private _scene:Scene;
 
-    constructor(scene){
+    // constructor(scene){
+    //     this._scene = scene;
+    // }
+
+    constructor(){
+
+    }
+    public setScene(scene:Scene){
         this._scene = scene;
     }
-
     private async _setPhysics(){
-        // const ammo = await Ammo();
-        // const physics = new AmmoJSPlugin(true,ammo);
-        // const cannon = await new CANNON();
         window.CANNON = CANNON;
         const physics = new CannonJSPlugin();
         this._scene.enablePhysics(new Vector3(0,-9.8,0),physics);
     }
-    public async load(){
-        const assets = await this._loadAssets();
+
+    public async load(level:number=0){//toturial
+        console.log("loading level " + level +" data");
+
+        const assets = await this._loadAssets(level);
         assets.allMeshes.forEach((child)=>{
             child.receiveShadows = true;
             child.checkCollisions = true;
         });
 
-        this._setPhysics().then(()=>{
-            //生成武器
-            const fireball = new FireBall(this._scene);
+        if(level ===0){
+            this._setPhysics().then(()=>{
+                //生成武器
+                const fireball = new FireBall(this._scene);
 
-            this._loadRock().then(rock=>{
-                for(let i=0;i<4;i++){
-                    const root = rock.root.clone();
+                // this._loadRock().then(rock=>{
+                //     for(let i=0;i<4;i++){
+                //         const root = rock.root.clone();
 
-                    root.position.x = 4*Math.sin(90*i/180*Math.PI);
-                    root.position.z = 4*Math.cos(90*i/180*Math.PI);
-                    root.position.y = 1.5;
+                //         root.position.x = 4*Math.sin(90*i/180*Math.PI);
+                //         root.position.z = 4*Math.cos(90*i/180*Math.PI);
+                //         root.position.y = 1.5;
 
-                    root.scaling.setAll(0.2);
-                    const fractures = [];
-                    let outer;
+                //         root.scaling.setAll(0.2);
+                //         const fractures = [];
+                //         let outer;
 
-                    for(let child of root.getChildMeshes()){
-                        if(child.name === ".Cube"){
-                            outer = child;
+                //         for(let child of root.getChildMeshes()){
+                //             if(child.name === ".Cube"){
+                //                 outer = child;
 
-                            outer.physicsImpostor = new PhysicsImpostor(
-                                outer,
-                                PhysicsImpostor.BoxImpostor,
-                                {
-                                    mass:0.1,
-                                    ignoreParent: true,
-                                },
-                                this._scene);
-                            outer.physicsImpostor.sleep();
+                //                 outer.physicsImpostor = new PhysicsImpostor(
+                //                     outer,
+                //                     PhysicsImpostor.BoxImpostor,
+                //                     {
+                //                         mass:0.1,
+                //                         ignoreParent: true,
+                //                     },
+                //                     this._scene);
+                //                 outer.physicsImpostor.sleep();
 
-                            outer.physicsImpostor.registerOnPhysicsCollide(
-                                fireball.bullet.physicsImpostor, 
-                                (main, collided)=>{
-                                    console.log("fireball hit the rock now ************");
-                                    outer.isVisible = false;
-                                    
-                                    const fractures = outer.metadata.fractures;
-                                    for(let i=0;i<fractures.length;i++){
-                                        let mesh = fractures[i];
+                //                 outer.physicsImpostor.registerOnPhysicsCollide(
+                //                     fireball.bullet.physicsImpostor, 
+                //                     (main, collided)=>{
+                //                         console.log("fireball hit the rock now ************");
+                //                         outer.isVisible = false;
+                                        
+                //                         const fractures = outer.metadata.fractures;
+                //                         for(let i=0;i<fractures.length;i++){
+                //                             let mesh = fractures[i];
 
-                                        mesh.physicsImpostor.wakeUp();
-                                    }
+                //                             mesh.physicsImpostor.wakeUp();
+                //                         }
 
-                                    setTimeout(()=>{
-                                        outer.dispose();
-                                        fractures.forEach(element => {
-                                            element.dispose();
-                                        });
-                                    },3000);
-                            });
-                            continue;
-                        }
-                        if(child.name.includes("Cube_cell")){//fracture
-                            let mesh = child;
-                            
-                            mesh.scaling.setAll(0.2);
+                //                         setTimeout(()=>{
+                //                             outer.dispose();
+                //                             fractures.forEach(element => {
+                //                                 element.dispose();
+                //                             });
+                //                         },3000);
+                //                 });
+                //                 continue;
+                //             }
+                //             if(child.name.includes("Cube_cell")){//fracture
+                //                 let mesh = child;
+                                
+                //                 mesh.scaling.setAll(0.2);
 
-                            mesh.parent = null;
-                            mesh.position = mesh.position.scale(0.2);
+                //                 mesh.parent = null;
+                //                 mesh.position = mesh.position.scale(0.2);
 
-                            mesh.position.x += root.position.x;
-                            mesh.position.y += root.position.y;
-                            mesh.position.z += root.position.z;
+                //                 mesh.position.x += root.position.x;
+                //                 mesh.position.y += root.position.y;
+                //                 mesh.position.z += root.position.z;
 
-                            mesh.physicsImpostor = new PhysicsImpostor(
-                                mesh,
-                                PhysicsImpostor.BoxImpostor,
-                                // PhysicsImpostor.ConvexHullImpostor,
-                                {
-                                    mass: Math.random()*2,
-                                    friction: 1,
-                                    restitution: 0.2,
-                                    nativeOptions: {},
-                                    ignoreParent: true,
-                                    disableBidirectionalTransformation: false
-                                },
-                                this._scene
-                            );
-                            mesh.physicsImpostor.sleep();
-                            fractures.push(mesh);
-                        }
-                    }
-                    outer.metadata = {
-                        fractures:fractures
-                    }
+                //                 mesh.physicsImpostor = new PhysicsImpostor(
+                //                     mesh,
+                //                     PhysicsImpostor.BoxImpostor,
+                //                     // PhysicsImpostor.ConvexHullImpostor,
+                //                     {
+                //                         mass: Math.random()*2,
+                //                         friction: 1,
+                //                         restitution: 0.2,
+                //                         nativeOptions: {},
+                //                         ignoreParent: true,
+                //                         disableBidirectionalTransformation: false
+                //                     },
+                //                     this._scene
+                //                 );
+                //                 mesh.physicsImpostor.sleep();
+                //                 fractures.push(mesh);
+                //             }
+                //         }
+                //         outer.metadata = {
+                //             fractures:fractures
+                //         }
 
+                //     }
+                //     rock.root.dispose();
+                // });
+                const m = this._scene.getMeshByName("ground");
+                if(m){
+                    m.physicsImpostor = new PhysicsImpostor(
+                        m,
+                        PhysicsImpostor.BoxImpostor,
+                        {
+                            mass:0
+                        },
+                        this._scene
+                    );
                 }
-                rock.root.dispose();
             });
-            const m = this._scene.getMeshByName("ground");
-            m.physicsImpostor = new PhysicsImpostor(
-                m,
-                PhysicsImpostor.BoxImpostor,
-                {
-                    mass:0
-                },
-                this._scene
-                );
-        });
+        }
+        //Creation of a plane
+        var plane = MeshBuilder.CreateBox("entrance", {size:1}, this._scene);
+        plane.rotation.x = Math.PI / 2;
 
-        this._scene.onPointerObservable.add((pointerInfo)=>{
-            switch (pointerInfo.type) {
-                case PointerEventTypes.POINTERTAP:
-                    switch (pointerInfo.event.button) {
-                        case 0:
-                            if(pointerInfo.pickInfo.pickedMesh){
-                                const outer = pointerInfo.pickInfo.pickedMesh;
-                                if(outer.name === '.Cube'){
-                                    outer.isVisible = false;
+        // plane.material = materialPlane;
+        const entrance = this._scene.getTransformNodeByName("pos_entrance");
+        if(entrance){
+            plane.position = entrance.getAbsolutePosition();
+            plane.position.y = 0;
+        }
+
+        // this._scene.onPointerObservable.add((pointerInfo)=>{
+        //     switch (pointerInfo.type) {
+        //         case PointerEventTypes.POINTERTAP:
+        //             switch (pointerInfo.event.button) {
+        //                 case 0:
+        //                     if(pointerInfo.pickInfo.pickedMesh){
+        //                         const outer = pointerInfo.pickInfo.pickedMesh;
+        //                         if(outer.name === '.Cube'){
+        //                             outer.isVisible = false;
                                     
-                                    const fractures = outer.metadata.fractures;
-                                    for(let i=0;i<fractures.length;i++){
-                                        let mesh = fractures[i];
+        //                             const fractures = outer.metadata.fractures;
+        //                             for(let i=0;i<fractures.length;i++){
+        //                                 let mesh = fractures[i];
 
-                                        // mesh.physicsImpostor.physicsBody.setActivationState(1);
-                                        mesh.physicsImpostor.wakeUp();
-                                        // mesh.physicsImpostor.forceUpdate();
-                                    }
+        //                                 // mesh.physicsImpostor.physicsBody.setActivationState(1);
+        //                                 mesh.physicsImpostor.wakeUp();
+        //                                 // mesh.physicsImpostor.forceUpdate();
+        //                             }
 
-                                    setTimeout(()=>{
-                                        outer.dispose();
-                                        // fractures.forEach(element => {
-                                        //     element.dispose();
-                                        // });
-                                    },3000);
-                                }
-                            }
-                            break;
-                    }
-                }
-        });
+        //                             setTimeout(()=>{
+        //                                 outer.dispose();
+        //                                 // fractures.forEach(element => {
+        //                                 //     element.dispose();
+        //                                 // });
+        //                             },3000);
+        //                         }
+        //                     }
+        //                     break;
+        //             }
+        //         }
+        // });
 
     }
 
-    private async _loadAssets(){
+    private async _loadAssets(level:number=0){
+        let level_ = (level + 1) + "";
+        
+        level_ = level_.padStart(3,"0");
+        console.log(`scene_${level_}.glb`);
+
         const result = await SceneLoader.ImportMeshAsync(
             "",
             ASSETS_PATH,
-            "scene_001.glb");
+            `scene_${level_}.glb`);
 
         const env = result.meshes[0];
-
-        // env.computeWorldMatrix(true);
 
         const allMeshes = env.getChildMeshes();
 
