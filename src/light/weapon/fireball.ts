@@ -61,12 +61,17 @@ export default class FireBall extends TransformNode{
         this._ball.position.x = pos.x;
         this._ball.position.z = pos.z;
 
-        this._ball.position.y = 1.4;
+        this._ball.position.y = this._player.position.y + 1.4;
 
         this._ball.physicsImpostor.sleep();
         this._state = STATE.STOP;
     }
+
+    public attackable(){
+        return this._state === STATE.STOP;
+    }
     public attack(target:Mesh){
+
         if(this._state === STATE.STOP){
             let forward = new Vector3(0, 0, -1);
             

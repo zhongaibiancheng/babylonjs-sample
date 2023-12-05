@@ -10,6 +10,7 @@ import {
     Ray, ActionManager, ExecuteCodeAction, AnimationGroup, ArcRotateCamera, AxesViewer, Color3, Color4, Engine, HemisphericLight, FreeCamera, MeshBuilder } from "@babylonjs/core";
 import InputController from './inputController';
 import Weapon from "../weapon/weapon";
+import FireBall from "../weapon/fireball";
 
 export default class PlayerController extends TransformNode {
     public camera;
@@ -133,8 +134,14 @@ export default class PlayerController extends TransformNode {
     }
 
     public attack(target:Mesh){
-        if(this._weapon){
+        console.log("begin starting attack ******");
+        if(this._weapon && this._weapon.attackable()){
             this._weapon.attack(target);
+        }else if(this._weapon){
+            console.log("second attack ******");
+            const weapon = new FireBall(this._scene);
+            this.attachWeapon(weapon as any);
+            this.attack(null);
         }
     }
 

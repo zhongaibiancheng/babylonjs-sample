@@ -61,12 +61,12 @@ export default class GameScene extends BaseScene{
         this._animations = params.animations;
 
         this._engine.displayLoadingUI();
+        const gui = new GUI(this._scene,undefined);
+        
         this._scene.detachControl();
 
         const scene = params.game_scene;
         scene.clearColor = new Color4(0, 0, 0);
-        // const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
-        // playerUI.idealHeight = 720;
 
         await this._initializeGameAsync(scene);
         

@@ -56,7 +56,7 @@ export default class Environment{
             child.checkCollisions = true;
         });
 
-        if(level ===0){
+        if(level === 0 || level === 1){
             this._setPhysics().then(()=>{
                 //生成武器
                 const fireball = new FireBall(this._scene);

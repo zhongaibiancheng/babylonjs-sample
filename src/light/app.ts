@@ -140,6 +140,7 @@ class App{
             trigger: ActionManager.OnIntersectionEnterTrigger,
             parameter: this._game_scene.getMeshByName("entrance_arrow")
         }, async () => {
+            console.log("collision now **********");
             this._engine.displayLoadingUI();
             this._game_scene = new Scene(this._engine);
             this._game_scene.clearColor = new Color4(0,0,1,1);
@@ -159,8 +160,7 @@ class App{
             }
 
             this._level = this._level + 1;
-            console.log("level ===="+this._level);
-            
+
             await this._environment.load(this._level); //environment
             
             const game = new GameScene(this._engine,this._game_scene);
@@ -183,8 +183,6 @@ class App{
             await this._scene.whenReadyAsync();
             this._engine.hideLoadingUI();
         }));
-
-        console.log("finished setup game");
     }
 }
 /* eslint-disable */

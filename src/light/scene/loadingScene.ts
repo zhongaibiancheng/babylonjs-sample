@@ -59,7 +59,6 @@ export default class LoadingScene extends BaseScene{
 
         //--WHEN SCENE IS FINISHED LOADING--
         await scene.whenReadyAsync();
-        console.log("loaded assets *****");
         this._engine.hideLoadingUI();
 
         return scene;
