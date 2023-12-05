@@ -159,17 +159,6 @@ export default class Environment{
                 }
             });
         }
-        //Creation of a plane
-        var plane = MeshBuilder.CreateBox("entrance", {size:1}, this._scene);
-        plane.rotation.x = Math.PI / 2;
-
-        // plane.material = materialPlane;
-        const entrance = this._scene.getTransformNodeByName("pos_entrance");
-        if(entrance){
-            plane.position = entrance.getAbsolutePosition();
-            plane.position.y = 0;
-        }
-
         // this._scene.onPointerObservable.add((pointerInfo)=>{
         //     switch (pointerInfo.type) {
         //         case PointerEventTypes.POINTERTAP:

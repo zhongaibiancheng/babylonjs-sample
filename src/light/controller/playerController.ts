@@ -181,7 +181,7 @@ export default class PlayerController extends TransformNode {
             return mesh.isPickable && mesh.isEnabled();
         }
         let pick = this.scene.pickWithRay(ray, predicate);
-
+console.log(pick);
         if (pick.hit) {
             return true;
         } else {
