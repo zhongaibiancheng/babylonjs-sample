@@ -1,0 +1,74 @@
+var createScene = function () {
+    // This creates a basic Babylon Scene object (non-mesh)
+    var scene = new BABYLON.Scene(engine);
+
+    // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
+    var light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+
+    // Default intensity is 1. Let's dim the light a small amount
+    light.intensity = 0.7;
+    const camera = new BABYLON.ArcRotateCamera(
+            "camera",
+            Math.PI/2.0,
+            Math.PI/2.0,
+            2,
+            BABYLON.Vector3.Zero(),
+            scene);
+        // camera.rotation.y += Math.PI/2.0;
+        camera.attachControl(canvas,true);
+        camera.wheelDeltaPercentage = 0.02;
+        camera.setPosition(new BABYLON.Vector3(8,5,-12));
+        //relese keyboard
+        camera.inputs.attached.keyboard.detachControl();
+
+        const ground = BABYLON.MeshBuilder.CreateGround("ground",{width:15,height:16},scene);
+        ground.checkCollisions = true;
+        const roof = BABYLON.MeshBuilder.CreateGround("roof",{width:4,height:4},scene);
+        roof.position.y = 0.5;
+        roof.checkCollisions = true;
+
+        const mesh = BABYLON.MeshBuilder.CreateBox("box");
+
+        const material = new BABYLON.StandardMaterial("box_b",scene);
+        material.backFaceCulling = true;
+        material.diffuseColor = new BABYLON.Color3(0,0,1);
+
+        mesh.material = material;
+        mesh.scaling.setAll(0.2);
+        mesh.position.y = 0.1;
+        mesh.position.x = -5;
+
+        mesh.rotation.y += Math.PI/2.0
+        roof.material = material;
+
+        scene.actionManager = new BABYLON.ActionManager(scene);
+        
+        // this.createObstacts();
+        scene.actionManager.registerAction(
+            new BABYLON.ExecuteCodeAction(
+                BABYLON.ActionManager.OnKeyDownTrigger, (evt) => {
+                    if(evt.sourceEvent.key == 'ArrowUp'){
+                        let dir = mesh.forward;
+                        dir.scaleInPlace(0.5);
+                        mesh.moveWithCollisions(dir);
+
+                    }else if(evt.sourceEvent.key == 'ArrowLeft'){
+                        mesh.rotation.y += Math.PI/4.0;
+                    }else if(evt.sourceEvent.key == 'ArrowRight'){
+                        mesh.rotation.y -= Math.PI/4.0;
+                    }else if(evt.sourceEvent.key == 'ArrowDown'){
+                        let dir = mesh.forward.scale(-1);
+                        dir.scaleInPlace(0.5);
+                        mesh.moveWithCollisions(dir);
+                    }
+                    
+                }
+            )
+        );
+  
+    return scene;
+};
+
+
+TOPIC:
+https://forum.babylonjs.com/t/i-then-use-movewithcollisions-to-implement-collision-detection-and-movement-but-i-found-that-when-there-is-an-object-above-the-move-i-cannot-move-to-the-specified-area/46247

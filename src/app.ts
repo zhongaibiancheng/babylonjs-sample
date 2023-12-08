@@ -47,5 +47,8 @@
 // import Shatter from './shatter/shatter';
 // const shatter = new Shatter();
 
-import LoadingScene from './loadingscene/loadingscene';
-const lodingscene = new LoadingScene();
+// import LoadingScene from './loadingscene/loadingscene';
+// const lodingscene = new LoadingScene();
+
+import TestCollision from './character/testCollision';
+const collision = new TestCollision();

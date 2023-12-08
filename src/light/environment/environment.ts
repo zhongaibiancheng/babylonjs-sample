@@ -268,18 +268,19 @@ export default class Environment{
         const outer = MeshBuilder.CreateBox(
             "outer", 
             { 
-                width: 2,
-                depth: 1, 
-                height: 3 
+                width: 0.8,
+                depth: 0.7, 
+                height: 1.3
             }, 
             this._scene);
 
-        outer.isVisible = false;
+        outer.scaling.setAll(0.5);
+        outer.isVisible = true;
         outer.isPickable = false;
         outer.checkCollisions = true;
 
         //move origin of box collider to the bottom of the mesh (to match player mesh)
-        outer.bakeTransformIntoVertices(Matrix.Translation(0, 1.5, 0))
+        outer.bakeTransformIntoVertices(Matrix.Translation(0, 0.7, 0))
 
         //for collisions
         outer.ellipsoid = new Vector3(1, 1.5, 1);

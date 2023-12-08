@@ -571,6 +571,7 @@ export default class PlayerController {
                 this._player.rotate(Vector3.Up(),rotation_speed);
                 this._camRoot.rotate(Vector3.Up(),rotation_speed);
             }else{
+                console.log(gravity);
                 if(gravity.x !=0 || gravity.y != 0 || gravity.z !=0){
                     this._player.moveWithCollisions(gravity);
                 }

@@ -30,9 +30,9 @@
     "webpack-dev-server": "^4.15.1"
   },
   "dependencies": {
-    "@babylonjs/core": "^6.24.0",
-    "@babylonjs/inspector": "^6.24.0",
-    "@babylonjs/materials": "^6.24.0",
+    "@babylonjs/core": "^6.32.1",
+    "@babylonjs/inspector": "^6.32.1",
+    "@babylonjs/materials": "^6.32.1",
     "ammojs-typed": "^1.0.6",
     "cannon-es": "^0.20.0",
     "recast-detour": "^1.6.2"

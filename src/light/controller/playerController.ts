@@ -176,13 +176,19 @@ export default class PlayerController extends TransformNode {
             this.mesh.position.y + 0.5,
             this.mesh.position.z + offsetZ);
 
+            // MeshBuilder.CreateLines("test",
+            // {
+            //     points:[this.mesh.position,pos]
+            // });
+            
         const ray = new Ray(pos, Vector3.Up().scale(-1), distance);
         const predicate = (mesh) => {
             return mesh.isPickable && mesh.isEnabled();
         }
         let pick = this.scene.pickWithRay(ray, predicate);
-console.log(pick);
+
         if (pick.hit) {
+            console.log(pick)
             return true;
         } else {
             return false;
@@ -197,7 +203,6 @@ console.log(pick);
     }
     
     private _updateFromControll(): void {
-
         if(this._input.attackKeys.E){
             this.attack(null);
         }
@@ -258,6 +263,8 @@ console.log(pick);
             this._camRoot.rotationQuaternion = this._camRoot.rotationQuaternion.multiply(_Q);
         }
         
+        // velocity.addInPlace(this._gravity);
+
         //静止状态
         if(velocity.length() === 0){
             this._moveDirection = Vector3.Zero();
@@ -273,6 +280,9 @@ console.log(pick);
 
             this._moveDirection = forward;
         }
+        // else{
+        //     this._moveDirection = velocity;
+        // }
         return;
     }
     
@@ -299,11 +309,16 @@ console.log(pick);
         if (this._gravity.y < 0 && this._jumped) {
             this._isFalling = true;
         }
+        console.log(this._gravity);
         this._moveDirection = this._moveDirection.addInPlace(this._gravity);
+ 
         this.mesh.moveWithCollisions(this._moveDirection);
+        console.log("**** after moveing with collisions *******");
+
         this._walking = true;
 
         if (this._isGrounded()) {
+            console.log("**** landing on ground *********");
             this._gravity.y = 0;
             this._grounded = true;
             this._lastGroundPos.copyFrom(this.mesh.position);

@@ -34,7 +34,7 @@ class App{
     _player_mesh:Mesh;
     _animations:Array<AnimationGroup>;
 
-    _level:number = 0;
+    _level:number = 1;
     _starting_entrance:Boolean = false;
     constructor(){
         this._starting_entrance = false;
@@ -128,13 +128,16 @@ class App{
         this._environment = new Environment();
         this._environment.setScene(this._game_scene);
 
-        await this._environment.load(); //environment
+        await this._environment.load(1); //environment
         const result = await this._environment.loadCharacterAssets();
 
         this._player_mesh = result.outer;
         this._animations  = result.animations;
         if(!this._player_mesh.actionManager){
             this._player_mesh.actionManager = new ActionManager(this._game_scene);
+        }
+        if(!this._game_scene.getMeshByName("entrance_arrow")){
+            return;
         }
         this._player_mesh.actionManager.registerAction(
             new ExecuteCodeAction({
