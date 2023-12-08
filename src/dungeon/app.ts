@@ -83,7 +83,7 @@ class App{
     }
     
     async _gotoGame(){
-        const game = new GameScene(this._engine,this._scene);
+        const game = new GameScene(this._engine,this._scene,this._canvas);
         game.init({
             callback:undefined,
             game_scene:this._game_scene,
@@ -148,7 +148,7 @@ class App{
 
             await this._environment.load(this._level); //environment
             
-            const game = new GameScene(this._engine,this._game_scene);
+            const game = new GameScene(this._engine,this._game_scene,this._canvas);
 
             await game.init({
                 callback:undefined,

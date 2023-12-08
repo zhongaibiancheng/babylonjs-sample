@@ -6,22 +6,12 @@ import * as CANNON from 'cannon-es'
 
 import { 
     Scene, 
-    // AmmoJSPlugin,
     Vector3, MeshBuilder, 
     Matrix,
     Quaternion,
     SceneLoader,
     PhysicsImpostor,
-    PointerEventTypes,
-    Mesh,
-    CannonJSPlugin,
-    AmmoJSPlugin,
-    SpriteManager,
-    Sprite,
-    StandardMaterial,
-    Texture,
-    Color3,
-    VertexData} from "@babylonjs/core";
+    CannonJSPlugin} from "@babylonjs/core";
 import FireBall from "../weapon/fireball";
 
 /**资源文件目录 */

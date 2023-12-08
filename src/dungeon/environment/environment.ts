@@ -11,21 +11,15 @@ import {
     Quaternion,
     SceneLoader,
     PhysicsImpostor,
-    PointerEventTypes,
-    Mesh,
     CannonJSPlugin,
-    AmmoJSPlugin,
-    SpriteManager,
-    Sprite,
-    StandardMaterial,
     Texture,
-    Color3,
-    VertexData} from "@babylonjs/core";
+    StandardMaterial} from "@babylonjs/core";
 import FireBall from "../weapon/fireball";
 
 /**资源文件目录 */
-const ASSETS_PATH = "./light/scene/";
-const ASSETS_PATH_MODELS = "./light/models/";
+//scene 资源
+const ASSETS_PATH = "./dungeon/scene/";
+const ASSETS_PATH_MODELS = "./dungeon/models/";
 
 export default class Environment{
     private _scene:Scene;
@@ -43,33 +37,12 @@ export default class Environment{
         this._scene.enablePhysics(new Vector3(0,-9.8,0),physics);
     }
 
-    public async load(level:number=0){//toturial
-        console.log("loading level " + level +" data");
-
-        const assets = await this._loadAssets(level);
+    public async load(level:number=0){//默认演示
+        const assets = await this._createScene(level);
         assets.allMeshes.forEach((child)=>{
             child.receiveShadows = true;
             child.checkCollisions = true;
         });
-
-        if(level === 0 || level === 1){
-            this._setPhysics().then(()=>{
-                //生成武器
-                const fireball = new FireBall(this._scene);
-
-                const m = this._scene.getMeshByName("ground");
-                if(m){
-                    m.physicsImpostor = new PhysicsImpostor(
-                        m,
-                        PhysicsImpostor.BoxImpostor,
-                        {
-                            mass:0
-                        },
-                        this._scene
-                    );
-                }
-            });
-        }
     }
 
     /**
@@ -77,69 +50,56 @@ export default class Environment{
      * @param level 
      * @returns 
      */
-    private async _loadAssets(level:number=0){
-        let level_ = (level + 1) + "";
-        
-        level_ = level_.padStart(3,"0");
-        console.log(`scene_${level_}.glb`);
+    private async _createScene(level:number=0){
+        const allMeshes = [];
+        const row = 5;
+        const ground = MeshBuilder.CreatePlane("ground",{width:row,height:row},this._scene);
+        const texture = new Texture("./dungeon/textures/stone_ground_1024x1024.png");
+        const material = new StandardMaterial("ground_material",this._scene);
+        material.diffuseTexture = texture;
 
-        const result = await SceneLoader.ImportMeshAsync(
-            "",
-            ASSETS_PATH,
-            `scene_${level_}.glb`);
+        ground.material = material;
 
-        const env = result.meshes[0];
+        ground.rotation.x = Math.PI/2.0;
+        allMeshes.push(ground);
 
-        const allMeshes = env.getChildMeshes();
+        const wall = MeshBuilder.CreateBox("wall",{width:1,height:1,size:1},this._scene);
+        const texture_wall = new Texture("./dungeon/textures/red_brick_wall-512x512.png");
+        const material_wall = new StandardMaterial("material_wall",this._scene);
+        material_wall.diffuseTexture = texture_wall;
 
-        allMeshes.forEach(m=>{
-            m.checkCollisions = true;
-            m.receiveShadows = true;
+        wall.material = material_wall;
+        allMeshes.push(wall);
 
-            if(m.name.includes("wall_")){
-                m.isVisible = true;
-                m.checkCollisions = true;
+        const map = this._createMap(5);
+
+        const offsetZ = -(row)/2.0;
+        const offsetX = -(row)/2.0;
+        for(let i=0;i<map.length;i++){
+            for(let j=0;j<map[i].length;j++){
+                if(map[i][j] === 0){
+                    const wall_one = wall.clone();
+                    wall_one.position.set(j+offsetX+0.5,0.5,i+offsetZ+0.5);
+                }
             }
-
-            if(m.name === 'ground'){
-                m.isPickable = true;
-                m.checkCollisions = true;
-
-            }
-
-            if(m.name.includes("collision")){
-                m.isPickable = true;
-                m.isVisible = false;
-            }
-
-            if(m.name.includes("Trigger")){
-                m.isVisible = true;
-                m.checkCollisions = false;
-                m.isPickable = false;
-            }
-
-            //areas that will use box collisions
-            if (m.name.includes("stairs") || m.name == "cityentranceground" || m.name == "fishingground.001" || m.name.includes("lilyflwr")) {
-                m.checkCollisions = false;
-                m.isPickable = false;
-            }
-        });
-        
-        //wood
-        const result_box = await SceneLoader.ImportMeshAsync(
-            "",
-            ASSETS_PATH_MODELS,
-            "boost_box.glb");
-        const box = result_box.meshes[0];
-        box.name = "love";
-        box.position.y = 1.5;
-
+        }
         return {
-            env:env,
             allMeshes:allMeshes
         }
     }
 
+    private _createMap(row:number){
+        const map = new Array<Array<number>>();
+        
+        for(let i=0;i<row;i++){
+            const row_data = [];
+            for(let j=0;j<row;j++){
+                row_data.push(Math.random()>0.5?0:1);
+            }
+            map.push(row_data);
+        }
+        return map;
+    }
     /**
      * 
      * 加载人物和动画

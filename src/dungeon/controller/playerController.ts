@@ -78,15 +78,19 @@ export default class PlayerController extends TransformNode {
     private _weapon:Weapon;
 
     private _engine:Engine;
-    constructor(assets, scene: Scene,
+    private _canvas:HTMLCanvasElement;
+    
+    constructor(assets: Mesh, scene: Scene,
         shadowGenerator: ShadowGenerator,
-         input?, animations?,
-         engine?:Engine) {
+         input?: InputController, animations?: AnimationGroup[],
+         engine?:Engine,
+         canvas?:HTMLCanvasElement) {
         super("player_controller", scene);
 
         this.scene = scene;
         this._engine = engine;
 
+        this._canvas = canvas;
         this.scene.collisionsEnabled = true;
 
         // const axes = new AxesViewer(this.scene,5);
@@ -397,12 +401,21 @@ export default class PlayerController extends TransformNode {
         this._yTilt = yTilt;
         yTilt.parent = this._camRoot;
 
-        //our actual camera that's pointing at our root's position
-        this.camera = new UniversalCamera("cam", new Vector3(0, 0, -30), this.scene);
-        this.camera.lockedTarget = this._camRoot.position;
-        this.camera.fov = 0.47350045992678597;
-        this.camera.parent = yTilt;
+        // //our actual camera that's pointing at our root's position
+        // this.camera = new UniversalCamera("cam", new Vector3(0, 0, -30), this.scene);
+        // this.camera.lockedTarget = this._camRoot.position;
+        // this.camera.fov = 0.47350045992678597;
+        // this.camera.parent = yTilt;
 
+        this.camera = new ArcRotateCamera(
+            "camera",
+            Math.PI / 2, 
+            Math.PI / 2, 
+            20, 
+            Vector3.Zero(), 
+            this._scene);
+
+        this.camera.attachControl(this._canvas,true);
         this.scene.activeCamera = this.camera;
 
         return this.camera;

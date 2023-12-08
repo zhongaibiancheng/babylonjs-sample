@@ -8,14 +8,12 @@ import {
     HemisphericLight,
     Mesh,
     AnimationGroup,
-    Animation,
     SpriteManager,
     Sprite,
     MeshBuilder,
-    FreeCamera
 } from "@babylonjs/core";
 
-import { AdvancedDynamicTexture,Button,Control} from "@babylonjs/gui";
+import { AdvancedDynamicTexture} from "@babylonjs/gui";
 
 import BaseScene from './baseScene'
 import {SceneParams} from '../utils/const';
@@ -31,11 +29,13 @@ export default class GameScene extends BaseScene{
 
     _animations:Array<AnimationGroup>;
     gui:AdvancedDynamicTexture;
+    _canvas:HTMLCanvasElement;
 
-    constructor(engine:Engine,scene:Scene){
+    constructor(engine:Engine,scene:Scene,canvas:HTMLCanvasElement){
         super(engine,scene);
 
         this._engine = engine;
+        this._canvas = canvas
     }
     
     private async _initializeGameAsync(scene): Promise<void> {
@@ -50,7 +50,8 @@ export default class GameScene extends BaseScene{
             undefined,
             input,
             this._animations,
-            this._engine
+            this._engine,
+            this._canvas
             );
         
         this._player.activatePlayerCamera();
@@ -70,16 +71,9 @@ export default class GameScene extends BaseScene{
 
         await this._initializeGameAsync(scene);
         
-        scene.getMeshByName("outer").position = scene.getTransformNodeByName("start_pos").getAbsolutePosition(); //move the player to the start position
-
-        if(params.level === 0){//toturial 
-            this._createSprite(scene);
-            this._createParticle(scene);
-            this._waveBoard(scene);
-        }else if(params.level === 1){
-
-        }
-         //--WHEN SCENE IS FINISHED LOADING--
+        // scene.getMeshByName("outer").position = scene.getTransformNodeByName("start_pos").getAbsolutePosition(); 
+        scene.getMeshByName("outer").position = new Vector3(0,0,0);
+        //--WHEN SCENE IS FINISHED LOADING--
         await scene.whenReadyAsync();
         this._engine.hideLoadingUI();
 
