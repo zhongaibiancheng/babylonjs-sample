@@ -192,7 +192,6 @@ export default class PlayerController extends TransformNode {
         let pick = this.scene.pickWithRay(ray, predicate);
 
         if (pick.hit) {
-            console.log(pick)
             return true;
         } else {
             return false;
@@ -313,16 +312,14 @@ export default class PlayerController extends TransformNode {
         if (this._gravity.y < 0 && this._jumped) {
             this._isFalling = true;
         }
-        console.log(this._gravity);
+
         this._moveDirection = this._moveDirection.addInPlace(this._gravity);
  
         this.mesh.moveWithCollisions(this._moveDirection);
-        console.log("**** after moveing with collisions *******");
 
         this._walking = true;
 
         if (this._isGrounded()) {
-            console.log("**** landing on ground *********");
             this._gravity.y = 0;
             this._grounded = true;
             this._lastGroundPos.copyFrom(this.mesh.position);

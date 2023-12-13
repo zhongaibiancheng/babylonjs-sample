@@ -32,7 +32,7 @@ class App{
     _player_mesh:Mesh;
     _animations:Array<AnimationGroup>;
 
-    _level:number = 1;
+    _level:number = 0;
     _starting_entrance:Boolean = false;
 
     constructor(){
@@ -105,7 +105,7 @@ class App{
         this._environment = new Environment();
         this._environment.setScene(this._game_scene);
 
-        await this._environment.load(1); //environment
+        await this._environment.load(0); //environment
         const result = await this._environment.loadCharacterAssets();
 
         this._player_mesh = result.outer;
@@ -144,7 +144,7 @@ class App{
                 this._player_mesh.actionManager = new ActionManager(this._game_scene);
             }
 
-            this._level = this._level + 1;
+            // this._level = this._level + 1;
 
             await this._environment.load(this._level); //environment
             

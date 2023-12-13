@@ -13,8 +13,12 @@ import {
     PhysicsImpostor,
     CannonJSPlugin,
     Texture,
-    StandardMaterial} from "@babylonjs/core";
+    StandardMaterial,
+    DynamicTexture,
+    Color4,
+    Color3} from "@babylonjs/core";
 import FireBall from "../weapon/fireball";
+import { CustomMaterial } from "@babylonjs/materials";
 
 /**资源文件目录 */
 //scene 资源
@@ -38,19 +42,43 @@ export default class Environment{
     }
 
     public async load(level:number=0){//默认演示
-        const assets = await this._createScene(level);
+        const assets = await this._loadAssets(level);
         assets.allMeshes.forEach((child)=>{
             child.receiveShadows = true;
             child.checkCollisions = true;
         });
+
+        this._createBlackboard();
     }
 
+    private _createBlackboard(){
+        // const blackboard = this._scene.getMeshByName("blackboard");
+        const blackboard = MeshBuilder.CreatePlane("blackboard",{size:2,width:3.8,height:1.8},this._scene);
+        // console.log(blackboard);
+
+        blackboard.position = this._scene.getTransformNodeByName("blackboard_pos").getAbsolutePosition();
+        // console.log(blackboard.position);
+        const texture = new DynamicTexture("blackboard",{width:1024,height:512});
+
+        blackboard.rotation.y += Math.PI;
+        texture.update();
+
+        const blackboard_material = new CustomMaterial("blackboard_material",this._scene);
+        blackboard_material.diffuseTexture = texture;
+        // blackboard_material.diffuseColor = new Color3(1,1,1);
+        blackboard_material.diffuseTexture.hasAlpha = true;
+
+        blackboard.material = blackboard_material;
+        var font = "bold 64px monospace";
+        texture.drawText("静夜思的作者是李白吗？", 50, 100, font, "black", "transparent", true, true);
+    }
     /**
      * 加载各种3d model
      * @param level 
      * @returns 
      */
     private async _createScene(level:number=0){
+        const scaling = 0.5;
         const allMeshes = [];
         const row = 5;
         const ground = MeshBuilder.CreatePlane("ground",{width:row,height:row},this._scene);
@@ -75,29 +103,93 @@ export default class Environment{
 
         const offsetZ = -(row)/2.0;
         const offsetX = -(row)/2.0;
-        for(let i=0;i<map.length;i++){
-            for(let j=0;j<map[i].length;j++){
-                if(map[i][j] === 0){
+        for(let i=0;i<map.length/scaling;i++){
+            for(let j=0;j<map[i].length/scaling;j++){
+                if(map[i][j] === 0){//0:wall
                     const wall_one = wall.clone();
-                    wall_one.position.set(j+offsetX+0.5,0.5,i+offsetZ+0.5);
+                    wall_one.position.set(j+offsetX+0.5*scaling,0.5*scaling,i+offsetZ+0.5*scaling);
                 }
             }
         }
+        wall.dispose();
         return {
             allMeshes:allMeshes
         }
     }
 
-    private _createMap(row:number){
-        const map = new Array<Array<number>>();
+    private async _loadAssets(level:number=0){
+        let level_ = (level + 1) + "";
         
-        for(let i=0;i<row;i++){
-            const row_data = [];
-            for(let j=0;j<row;j++){
-                row_data.push(Math.random()>0.5?0:1);
+        level_ = level_.padStart(3,"0");
+        console.log(`scene_${level_}.glb`);
+
+        const result = await SceneLoader.ImportMeshAsync(
+            "",
+            ASSETS_PATH,
+            `scene_${level_}.glb`);
+
+        const env = result.meshes[0];
+
+        const allMeshes = env.getChildMeshes();
+
+        allMeshes.forEach(m=>{
+            m.checkCollisions = true;
+            m.receiveShadows = true;
+
+            if(m.name.includes("wall_")){
+                m.isVisible = true;
+                m.checkCollisions = true;
             }
-            map.push(row_data);
+
+            if(m.name === 'ground'){
+                m.isPickable = true;
+                m.checkCollisions = true;
+
+            }
+
+            if(m.name.includes("collision")){
+                m.isPickable = true;
+                m.isVisible = false;
+            }
+
+            if(m.name.includes("Trigger")){
+                m.isVisible = true;
+                m.checkCollisions = false;
+                m.isPickable = false;
+            }
+
+            //areas that will use box collisions
+            if (m.name.includes("stairs") || m.name == "cityentranceground" || m.name == "fishingground.001" || m.name.includes("lilyflwr")) {
+                m.checkCollisions = false;
+                m.isPickable = false;
+            }
+        });
+
+        return {
+            env:env,
+            allMeshes:allMeshes
         }
+    }
+
+
+    private _createMap(row:number):Array<Array<number>>{
+        // const map = new Array<Array<number>>();
+        
+        // for(let i=0;i<row;i++){
+        //     const row_data = [];
+        //     for(let j=0;j<row;j++){
+        //         row_data.push(Math.random()>0.5?0:1);
+        //     }
+        //     map.push(row_data);
+        // }
+        // return map;
+        const map = [
+            [0,0,0,0,0],
+            [0,1,1,1,0],
+            [0,1,1,1,0],
+            [0,1,1,1,0],
+            [0,0,1,0,0],
+            ]
         return map;
     }
     /**
