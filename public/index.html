@@ -32,6 +32,8 @@
                 height: 50%;
                 border-radius: 0.5rem;
                 z-index: 99000 !important;
+                background-image:url('/images/background.png');
+                background-size:100% 100%;
             }
             .close-button {
                 float: right;
@@ -42,7 +44,17 @@
                 border-radius: 0.25rem;
                 background-color: lightgray;
             }
-
+            #modal-iframe{
+                width:100%;
+                height:100%;
+                padding-top:1rem;
+            }
+            #modal-iframe .title{
+                text-align:center;
+            }
+            #modal-iframe .content{
+                text-align:center;
+            }
         </style>
     </head>
     <body>
@@ -50,7 +62,12 @@
         <div class="modal">
             <div class="modal-content">
                 <span class="close-button">×</span>
-                <div id="modal-iframe">This SPHERE is really wonderful! <br><h3>HTML tags allowed :)</h3></div>
+                <div id="modal-iframe">
+                    <h3 class="title">你能把这段文字转成十进制数字吗?</h3>
+                    <h4 class="content">1111 0101 1100 1010 1000 0011<br>
+                    这段文字很重要呀！
+                    </h4>
+                </div>
             </div>
         </div>
         <canvas id="canvas" style="width:100%;height:100%;"></canvas>
