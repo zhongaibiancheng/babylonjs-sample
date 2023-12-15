@@ -17,7 +17,9 @@ import {
     DynamicTexture,
     Color4,
     Color3,
-    AxesViewer} from "@babylonjs/core";
+    AxesViewer,
+    ActionManager,
+    ExecuteCodeAction} from "@babylonjs/core";
 import FireBall from "../weapon/fireball";
 import { CustomMaterial } from "@babylonjs/materials";
 
@@ -52,49 +54,66 @@ export default class Environment{
 
         this._createBlackboard();
         if(level === 0){
-            const paper = await this._loadPasswordWithPaper();
-            paper.scaling.setAll(0.15);
-            // paper.position = this._scene.getTransformNodeByName("paper_pos").getAbsolutePosition();
-            
-            const paper_surface = MeshBuilder.CreatePlane(
-                "paper",
-                {
-                    // size:2,
-                    // width:1.8,
-                    // height:1.8
-                },this._scene);
+            const paper = MeshBuilder.CreateBox("paper",{
+                size:0.3,
+                width:0.3,
+                height:0.3},
+                this._scene);
+            paper.position = this._scene.getTransformNodeByName("paper_pos").getAbsolutePosition();
 
-            paper_surface.position = this._scene.getTransformNodeByName("paper_pos").getAbsolutePosition();
-            // const text = new StandardMaterial("s",this._scene);
-            // text.diffuseColor = new Color3(1,0,0);
-            // paper_surface.material = text;
-            paper_surface.position.y = 2;
-            const texture = new DynamicTexture("paper",{width:200,height:200});
+            paper.actionManager = new ActionManager(this._scene);
+            paper.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPickTrigger,()=>{
+                this._showDialogue();
+            }))
+            // const paper = await this._loadPasswordWithPaper();
+            // paper.scaling.setAll(0.15);
+            // // paper.position = this._scene.getTransformNodeByName("paper_pos").getAbsolutePosition();
+            
+            // const paper_surface = MeshBuilder.CreatePlane(
+            //     "paper",
+            //     {
+            //         // size:2,
+            //         // width:1.8,
+            //         // height:1.8
+            //     },this._scene);
+
+            // paper_surface.position = this._scene.getTransformNodeByName("paper_pos").getAbsolutePosition();
+            // // const text = new StandardMaterial("s",this._scene);
+            // // text.diffuseColor = new Color3(1,0,0);
+            // // paper_surface.material = text;
+            // paper_surface.position.y = 2;
+            // const texture = new DynamicTexture("paper",{width:200,height:200});
     
-            const context = texture.getContext();
-            paper_surface.rotation.y += Math.PI;
-            paper_surface.rotation.x += Math.PI/2.0;
-            texture.update();
+            // const context = texture.getContext();
+            // paper_surface.rotation.y += Math.PI;
+            // paper_surface.rotation.x += Math.PI/2.0;
+            // texture.update();
     
-            const paper_material = new CustomMaterial("paper_material",this._scene);
-            paper_material.diffuseTexture = texture;
-            paper_material.diffuseTexture.hasAlpha = true;
+            // const paper_material = new CustomMaterial("paper_material",this._scene);
+            // paper_material.diffuseTexture = texture;
+            // paper_material.diffuseTexture.hasAlpha = true;
     
-            paper_surface.material = paper_material;
-            var font = "bold 12px monospace";
-            const words = "二进制数字转成10进制。\n    1001 0101 0100 0111 0101 0011";
-            let y = 10;
+            // paper_surface.material = paper_material;
+            // var font = "bold 12px monospace";
+            // const words = "二进制数字转成10进制。\n    1001 0101 0100 0111 0101 0011";
+            // let y = 10;
     
-            for (let word of words.split("\n")){
-                console.log(word);
-                var metrics = context.measureText(word) as any;
-                // let fontHeight = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
-                let actualHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+            // for (let word of words.split("\n")){
+            //     console.log(word);
+            //     var metrics = context.measureText(word) as any;
+            //     // let fontHeight = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
+            //     let actualHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
     
-                y = y + actualHeight + 10;
-                texture.drawText(word, 10, y, font, "black", "transparent", true, true);
-            }
+            //     y = y + actualHeight + 10;
+            //     texture.drawText(word, 10, y, font, "black", "transparent", true, true);
+            // }
         }
+    }
+
+    private _showDialogue(){
+        var modal = document.querySelector(".modal");
+        console.log(modal);
+        modal.classList.toggle("show-modal");
     }
 
     private _createBlackboard(){

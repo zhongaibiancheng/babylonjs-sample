@@ -2,8 +2,8 @@
 // import Particle from './particle/particle';
 //const particle = new Particle();
 
-// import CameraStudy  from "./camera/CameraStudy";
-// const camera = new CameraStudy();
+import CameraStudy  from "./camera/CameraStudy";
+const camera = new CameraStudy();
 
 // import PlayerController from './playerController/PlayerController';
 // const player = new PlayerController();
@@ -50,5 +50,5 @@
 // import LoadingScene from './loadingscene/loadingscene';
 // const lodingscene = new LoadingScene();
 
-import TestCollision from './character/testCollision';
-const collision = new TestCollision();
+// import TestCollision from './character/testCollision';
+// const collision = new TestCollision();

@@ -1,4 +1,4 @@
-import { ArcRotateCamera, Color3, Color4, Engine, FollowCamera, HemisphericLight, Mesh, MeshBuilder, ParticleSystem, prepareStringDefinesForClipPlanes, Scene, StandardMaterial, Texture, Vector3, Vector4, _PrimaryIsoTriangle } from "@babylonjs/core";
+import { ArcRotateCamera, Color3, Color4, Engine, FollowCamera, HemisphericLight, Mesh, MeshBuilder, ParticleSystem, prepareStringDefinesForClipPlanes, Scene, StandardMaterial, Texture, Vector3, Vector4, _PrimaryIsoTriangle, ActionManager, ExecuteCodeAction } from "@babylonjs/core";
 
 export default class CameraStudy{
     _engine:Engine;
@@ -12,18 +12,6 @@ export default class CameraStudy{
         this._scene = new Scene(this._engine);
 
         const light = new HemisphericLight("light",new Vector3(1,1,1),this._scene);
-
-        // const camera = new ArcRotateCamera(
-        //     "camera",
-        //     Math.PI/2.0,
-        //     Math.PI/2.0,
-        //     2,
-        //     Vector3.Zero(),
-        //     this._scene);
-        
-        // camera.attachControl(canvas,true);
-        // camera.wheelDeltaPercentage = 0.02;
-        // camera.setPosition(new Vector3(0,5,-2));
 
         const ground = MeshBuilder.CreateGround("ground",{width:15,height:16},this._scene);
         ground.position.y = -2;
@@ -69,8 +57,25 @@ export default class CameraStudy{
     }
     
     _main():void{
+        const paper = MeshBuilder.CreateBox("paper",{
+            size:0.3,
+            width:0.3,
+            height:0.3},
+            this._scene);
+        // paper.position = this._scene.getTransformNodeByName("paper_pos").getAbsolutePosition();
+
+        paper.actionManager = new ActionManager(this._scene);
+        paper.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPickTrigger,()=>{
+            this._showDialogue();
+        }));
+
         this._engine.runRenderLoop(()=>{
             this._scene.render();
         })
+    }
+    private _showDialogue(){
+        var modal = document.querySelector(".modal");
+        console.log(modal);
+        modal.classList.toggle("show-modal");
     }
 }
