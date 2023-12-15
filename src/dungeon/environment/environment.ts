@@ -16,7 +16,8 @@ import {
     StandardMaterial,
     DynamicTexture,
     Color4,
-    Color3} from "@babylonjs/core";
+    Color3,
+    AxesViewer} from "@babylonjs/core";
 import FireBall from "../weapon/fireball";
 import { CustomMaterial } from "@babylonjs/materials";
 
@@ -42,6 +43,7 @@ export default class Environment{
     }
 
     public async load(level:number=0){//默认演示
+        new AxesViewer(this._scene,10);
         const assets = await this._loadAssets(level);
         assets.allMeshes.forEach((child)=>{
             child.receiveShadows = true;
@@ -49,28 +51,117 @@ export default class Environment{
         });
 
         this._createBlackboard();
+        if(level === 0){
+            const paper = await this._loadPasswordWithPaper();
+            paper.scaling.setAll(0.15);
+            // paper.position = this._scene.getTransformNodeByName("paper_pos").getAbsolutePosition();
+            
+            const paper_surface = MeshBuilder.CreatePlane(
+                "paper",
+                {
+                    // size:2,
+                    // width:1.8,
+                    // height:1.8
+                },this._scene);
+
+            paper_surface.position = this._scene.getTransformNodeByName("paper_pos").getAbsolutePosition();
+            // const text = new StandardMaterial("s",this._scene);
+            // text.diffuseColor = new Color3(1,0,0);
+            // paper_surface.material = text;
+            paper_surface.position.y = 2;
+            const texture = new DynamicTexture("paper",{width:200,height:200});
+    
+            const context = texture.getContext();
+            paper_surface.rotation.y += Math.PI;
+            paper_surface.rotation.x += Math.PI/2.0;
+            texture.update();
+    
+            const paper_material = new CustomMaterial("paper_material",this._scene);
+            paper_material.diffuseTexture = texture;
+            paper_material.diffuseTexture.hasAlpha = true;
+    
+            paper_surface.material = paper_material;
+            var font = "bold 12px monospace";
+            const words = "二进制数字转成10进制。\n    1001 0101 0100 0111 0101 0011";
+            let y = 10;
+    
+            for (let word of words.split("\n")){
+                console.log(word);
+                var metrics = context.measureText(word) as any;
+                // let fontHeight = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
+                let actualHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+    
+                y = y + actualHeight + 10;
+                texture.drawText(word, 10, y, font, "black", "transparent", true, true);
+            }
+        }
     }
 
     private _createBlackboard(){
-        // const blackboard = this._scene.getMeshByName("blackboard");
         const blackboard = MeshBuilder.CreatePlane("blackboard",{size:2,width:3.8,height:1.8},this._scene);
-        // console.log(blackboard);
 
         blackboard.position = this._scene.getTransformNodeByName("blackboard_pos").getAbsolutePosition();
-        // console.log(blackboard.position);
         const texture = new DynamicTexture("blackboard",{width:1024,height:512});
 
+        const context = texture.getContext();
         blackboard.rotation.y += Math.PI;
         texture.update();
 
         const blackboard_material = new CustomMaterial("blackboard_material",this._scene);
         blackboard_material.diffuseTexture = texture;
-        // blackboard_material.diffuseColor = new Color3(1,1,1);
         blackboard_material.diffuseTexture.hasAlpha = true;
 
         blackboard.material = blackboard_material;
         var font = "bold 64px monospace";
-        texture.drawText("静夜思的作者是李白吗？", 50, 100, font, "black", "transparent", true, true);
+        const words = "在程序世界里面,数据是以二进制\n的形式存储的。下列这个式子的\n计算结果是多少?\n    1111 - 0101 = ?";
+        let y = 100;
+
+        for (let word of words.split("\n")){
+            var metrics = context.measureText(word) as any;
+            // let fontHeight = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
+            let actualHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+
+            y = y + actualHeight + 10;
+            texture.drawText(word, 50, y, font, "black", "transparent", true, true);
+        }
+
+        for(let i =0;i<3;i++){
+            const box = MeshBuilder.CreatePlane("box_"+i,{},this._scene);
+            box.rotation.y += Math.PI;
+            box.rotation.x += Math.PI/2.0;
+            // box.rotation.z += Math.PI/2.0;
+            box.position = this._scene.getTransformNodeByName("box_pos_"+(i+1)).getAbsolutePosition();
+            // box.position.z += 0.5;
+
+            const texture_ = new DynamicTexture("box_texture_"+i,{width:200,height:200});
+            texture_.update();
+
+            const context = texture_.getContext();
+            const box_material = new CustomMaterial("box_material_"+i,this._scene);
+            box_material.diffuseTexture = texture_;
+            box_material.diffuseTexture.hasAlpha = true;
+    
+            box.material = box_material;
+
+            let word = "" + (i*3+2);
+            console.log(word);
+
+            const measure = context.measureText(word);
+            var font = "bold 54px monospace";
+            texture_.drawText(word, (200-measure.width)/2.0, 130, font, "blue", "transparent", true, true);
+        }
+        
+    }
+    private async _loadPasswordWithPaper(){
+        const result = await SceneLoader.ImportMeshAsync(
+            "",
+            ASSETS_PATH_MODELS,
+            `paper.glb`);
+
+        const paper = result.meshes[0];
+
+        return paper;
+
     }
     /**
      * 加载各种3d model
