@@ -98,16 +98,10 @@ export default class PlayerController extends TransformNode {
         this._canvas = canvas;
         this.scene.collisionsEnabled = true;
 
-        // const axes = new AxesViewer(this.scene,5);
-        this._setupPlayerCamera();
-
         this.mesh = assets;
         this.mesh.parent = this;
 
-        // this.mesh.actionManager = new ActionManager(this.scene);
-
-        // shadowGenerator.addShadowCaster(assets); //the player mesh will cast shadows
-
+        this._setupPlayerCamera();
         this._input = input;
 
         this._action_0 = animations[0];
@@ -517,26 +511,29 @@ export default class PlayerController extends TransformNode {
         // }
     }
     private _moveMessageBubble(){
-        
+        //update rotation quatation 
+        this.camera.computeWorldMatrix();
+        // this._camRoot.rotation = this._camRoot.rotationQuaternion.toEulerAngles();
+        // console.log(this._camRoot.rotation);
+        // console.log(this.camera.isInFrustum(this.mesh));
+        console.log(this.camera.rotation,this.camera.rotationQuaternion);
+
         if(this.camera.isInFrustum(this.mesh)){
             //检查角色是否被其他物体遮挡
-            // const mesh_pos = this.mesh.position.clone();
-            // mesh_pos.y += 2;
-            // const direction = mesh_pos.subtract(this.camera.position).normalize();
-            // var ray = new Ray(
-            //     this.camera.position,
-            //     direction);
-
-            const ray = this.camera.getForwardRay(1000);
+            const ray = this.camera.getForwardRay(100);
             const rayHelper = new RayHelper(ray);
             rayHelper.show(this._scene);
 
             var pickInfo = this.scene.pickWithRay(ray);
             
             if (pickInfo.hit && pickInfo.pickedMesh !== this.mesh && 
-                pickInfo.pickedMesh !== this.mesh.parent) {
+                pickInfo.pickedMesh !== this.mesh.parent &&
+                !pickInfo.pickedMesh.name.includes("floor")
+                ) {
                 // 角色被遮挡
-                console.log("角色被遮挡");
+                console.log("角色被遮挡 name="+pickInfo.pickedMesh.name);
+            }else{
+                console.log("没有被遮挡")
             }
         }
         // // 在你的动画循环中
@@ -640,8 +637,13 @@ export default class PlayerController extends TransformNode {
         //our actual camera that's pointing at our root's position
         this.camera = new UniversalCamera("cam", new Vector3(0, 0, -30), this.scene);
         this.camera.lockedTarget = this._camRoot.position;
+
+        this.camera.rotationQuaternion = Quaternion.Zero();
+        // this._scene.getMeshByName("outer").position = this._scene.getTransformNodeByName("start_pos").getAbsolutePosition(); 
+        // this.camera.lockedTarget = this._scene.getMeshByName("outer");
+
         this.camera.fov = 0.47350045992678597;
-        // this.camera.fov = 0.27350045992678597;
+        this.camera.fov = 0.27350045992678597;
         this.camera.parent = yTilt;
 
         // this.camera = new ArcRotateCamera(
@@ -653,6 +655,7 @@ export default class PlayerController extends TransformNode {
         //     this._scene);
 
         // this.camera.attachControl(this._canvas,true);
+        // this.camera.attachControl(true);
         this.scene.activeCamera = this.camera;
 
         return this.camera;

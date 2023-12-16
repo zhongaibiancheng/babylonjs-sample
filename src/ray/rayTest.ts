@@ -117,6 +117,7 @@ export default class RayTest{
              * 
              * 用照相机的位置和box1的位置，用ray来判断是否有遮挡
              */
+            console.log(this._camera.rotation,this._camera.rotationQuaternion);
             const camera_pos = this._camera.position.clone();
             const box1_pos = this._scene.getMeshById("box1").position.clone();
 
@@ -129,10 +130,10 @@ export default class RayTest{
             if(pickInfo.hit && pickInfo.pickedMesh && 
                 pickInfo.pickedMesh.name !== "ground" &&
                 pickInfo.pickedMesh.name !== "box1"){
-                console.log(pickInfo.pickedMesh);
-                console.log("被遮盖");
+                // console.log(pickInfo.pickedMesh);
+                // console.log("被遮盖");
             }else{
-                console.log("没有被遮盖");
+                // console.log("没有被遮盖");
             }
         })
     }
