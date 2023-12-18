@@ -7,7 +7,7 @@ import {
     Vector3, 
     Camera, 
     Quaternion, 
-    Ray, ActionManager, ExecuteCodeAction, AnimationGroup, ArcRotateCamera, AxesViewer, Color3, Color4, Engine, HemisphericLight, FreeCamera, MeshBuilder, Matrix, RayHelper } from "@babylonjs/core";
+    Ray, ActionManager, ExecuteCodeAction, AnimationGroup, ArcRotateCamera, AxesViewer, Color3, Color4, Engine, HemisphericLight, FreeCamera, MeshBuilder, Matrix, RayHelper, FollowCamera, Axis } from "@babylonjs/core";
 import InputController from './inputController';
 import Weapon from "../weapon/weapon";
 import FireBall from "../weapon/fireball";
@@ -27,10 +27,6 @@ export default class PlayerController extends TransformNode {
     private _inputAmt: number;
     private _moveDirection: Vector3 = new Vector3();
     private _delta_time: number = 0;
-
-    //Camera
-    private _camRoot: TransformNode;
-    private _yTilt: TransformNode;
 
     //Player
     public mesh: Mesh; //outer collisionbox of player
@@ -126,7 +122,7 @@ export default class PlayerController extends TransformNode {
 
         this._setUpAnimations();
 
-        this._showMessageBubble("心情不太好呀今天");
+        // this._showMessageBubble("心情不太好呀今天");
         // this._moveMessageBubble();
     }
     /**
@@ -158,7 +154,7 @@ export default class PlayerController extends TransformNode {
     private _animatePlayer(): void {
         if (!this._dashPressed && !this._isFalling && !this._jumped
             && (this._input.forward
-                || this._input.backword)) {
+                || this._input.backward)) {
             this._curAnims = this._walk;
         }
         else if (this._jumped && !this._isFalling && !this._dashPressed) {
@@ -238,7 +234,7 @@ export default class PlayerController extends TransformNode {
         if (this._input.forward) {
             velocity.z += acc.z * this._delta_time;
         }
-        if (this._input.backword) {
+        if (this._input.backward) {
             velocity.z -= acc.z * this._delta_time;
         }
 
@@ -262,13 +258,6 @@ export default class PlayerController extends TransformNode {
         }else{
             this.mesh.rotationQuaternion = _R;
         }
-        if(this._camRoot.rotationQuaternion.length() ===0){
-            this._camRoot.rotationQuaternion = _Q;
-        }else{
-            this._camRoot.rotationQuaternion = this._camRoot.rotationQuaternion.multiply(_Q);
-        }
-        
-        // velocity.addInPlace(this._gravity);
 
         //静止状态
         if(velocity.length() === 0){
@@ -340,38 +329,7 @@ export default class PlayerController extends TransformNode {
     }
 
     private _updateCamera(): void {
-        //不错的想法
-        //trigger areas for rotating camera view
-        // if (this.mesh.intersectsMesh(this.scene.getMeshByName("cornerTrigger"))) {
-        //     if (this._input.horizontalAxis > 0) { //rotates to the right                
-        //         this._camRoot.rotation = Vector3.Lerp(this._camRoot.rotation, new Vector3(this._camRoot.rotation.x, Math.PI / 2, this._camRoot.rotation.z), 0.4);
-        //     } else if (this._input.horizontalAxis < 0) { //rotates to the left
-        //         this._camRoot.rotation = Vector3.Lerp(this._camRoot.rotation, new Vector3(this._camRoot.rotation.x, Math.PI, this._camRoot.rotation.z), 0.4);
-        //     }
-        // }
 
-        //rotates the camera to point down at the player when they enter the area, and returns it back to normal when they exit
-        // if (this.mesh.intersectsMesh(this.scene.getMeshByName("festivalTrigger"))) {
-        //     if (this._input.verticalAxis > 0) {
-        //         this._yTilt.rotation = Vector3.Lerp(this._yTilt.rotation, PlayerController.DOWN_TILT, 0.4);
-        //     } else if (this._input.verticalAxis < 0) {
-        //         this._yTilt.rotation = Vector3.Lerp(this._yTilt.rotation, PlayerController.ORIGINAL_TILT, 0.4);
-        //     }
-        // }
-        //once you've reached the destination area, return back to the original orientation, if they leave rotate it to the previous orientation
-        // if (this.mesh.intersectsMesh(this.scene.getMeshByName("destinationTrigger"))) {
-        //     if (this._input.verticalAxis > 0) {
-        //         this._yTilt.rotation = Vector3.Lerp(this._yTilt.rotation, PlayerController.ORIGINAL_TILT, 0.4);
-        //     } else if (this._input.verticalAxis < 0) {
-        //         this._yTilt.rotation = Vector3.Lerp(this._yTilt.rotation, PlayerController.DOWN_TILT, 0.4);
-        //     }
-        // }
-
-        let centerPlayer = this.mesh.position.y + 2;
-        this._camRoot.position = Vector3.Lerp(
-            this._camRoot.position, 
-            new Vector3(this.mesh.position.x, centerPlayer, this.mesh.position.z), 
-        0.4);
     }
 
     private _beforeRenderUpdate(): void {
@@ -511,111 +469,48 @@ export default class PlayerController extends TransformNode {
         // }
     }
     private _moveMessageBubble(){
-        //update rotation quatation 
-        this.camera.computeWorldMatrix();
-        // this._camRoot.rotation = this._camRoot.rotationQuaternion.toEulerAngles();
-        // console.log(this._camRoot.rotation);
-        // console.log(this.camera.isInFrustum(this.mesh));
-        console.log(this.camera.rotation,this.camera.rotationQuaternion);
+        let camera_target_pos = this.camera.position.clone();
+        const quaternion = this.mesh.rotationQuaternion;
 
-        if(this.camera.isInFrustum(this.mesh)){
-            //检查角色是否被其他物体遮挡
-            const ray = this.camera.getForwardRay(100);
-            const rayHelper = new RayHelper(ray);
-            rayHelper.show(this._scene);
+        camera_target_pos = camera_target_pos.applyRotationQuaternion(quaternion);
 
-            var pickInfo = this.scene.pickWithRay(ray);
-            
-            if (pickInfo.hit && pickInfo.pickedMesh !== this.mesh && 
-                pickInfo.pickedMesh !== this.mesh.parent &&
-                !pickInfo.pickedMesh.name.includes("floor")
-                ) {
-                // 角色被遮挡
-                console.log("角色被遮挡 name="+pickInfo.pickedMesh.name);
-            }else{
-                console.log("没有被遮挡")
-            }
+        const player_pos = this.mesh.position.clone();
+        player_pos.y += 0.6;
+        const ray = new Ray(camera_target_pos,player_pos.subtract(camera_target_pos));
+        
+        // const rayhelper = new RayHelper(ray);
+        // rayhelper.show(this.scene);
+        let bubble = document.getElementById('messageBubble');
+        // 执行射线检测
+        var hit = this.scene.pickWithRay(ray);
+        if (hit && hit.pickedMesh && 
+            !hit.pickedMesh.name.includes("floor")) {
+                bubble.style.display = "none";
+        } else {
+            // 在你的动画循环中
+            let position = this.mesh.getAbsolutePosition().clone();
+            position.y += 2;
+            // 将3D坐标转换为屏幕坐标
+            let screenCoords = Vector3.Project(
+                position,
+                Matrix.IdentityReadOnly,
+                this._scene.getTransformMatrix(),
+                this.camera.viewport.toGlobal(
+                    this._engine.getRenderWidth(), 
+                    this._engine.getRenderHeight())
+            );
+            // 更新HTML元素的位置
+            bubble.style.left = `${screenCoords.x + 20}px`;
+            bubble.style.top = `${screenCoords.y}px`;
+            bubble.style.display = "block";
+
+            this._showMessageBubble("shit ok fuck \n sb fuck idle");
         }
-        // // 在你的动画循环中
-        // let position = this.mesh.getAbsolutePosition().clone();
-        // position.y += 1;
-        // // 将3D坐标转换为屏幕坐标
-        // let screenCoords = Vector3.Project(
-        //     position,
-        //     Matrix.IdentityReadOnly,
-        //     this._scene.getTransformMatrix(),
-        //     this.camera.viewport.toGlobal(
-        //         this._engine.getRenderWidth(), 
-        //         this._engine.getRenderHeight())
-        // );
-
-        // // 更新HTML元素的位置
-        // let bubble = document.getElementById('messageBubble');
-        // bubble.style.left = `${screenCoords.x}px`;
-        // bubble.style.top = `${screenCoords.y}px`;
-
-        // var viewport = this.camera.viewport.toGlobal(
-        //     this._engine.getRenderWidth(), 
-        //     this._engine.getRenderHeight());
-
-        // // const position_ = this.mesh.position.clone();
-        // const position_ = this.camera.position;
-        // // position_.y += 1;
-        // var screenCoords_ = Vector3.Project(
-        //     position_,
-        //     Matrix.IdentityReadOnly,
-        //     this.scene.getTransformMatrix(),
-        //     viewport
-        // );
-
-    //     let rayHelper;
-    //     let rayLength = 100;
-    //     if(rayHelper)   rayHelper.dispose()
-	// 	const ray = this.camera.getForwardRay(rayLength)
-    // console.log(ray.direction);
-    //     rayHelper = new RayHelper(ray);		
-	// 	rayHelper.show(this.scene);		
-
-        // 检查屏幕坐标是否在视窗内
-        // if (screenCoords_.x >= 0 && screenCoords_.x <= this._engine.getRenderWidth() &&
-        // screenCoords_.y >= 0 && screenCoords_.y <= this._engine.getRenderHeight()) {
-            // let length = 1000;
-            // // 在这里，您可以执行一些操作，比如显示消息气泡
-            // var rayOrigin = this.camera.position; // 相机的位置作为射线的起点
-            // // var rayDirection = this._camRoot.position.subtract(rayOrigin).normalize(); // 目标位置减去相机位置得到方向向量
-            // var forward = this.camera.getForwardRay(length).direction;
-            // console.log(forward);
-            // var ray = new Ray(rayOrigin, forward.normalize()); // 创建射线
-            
-            // let rayHelper = new RayHelper(ray);
-            // rayHelper.show(this.scene);
-            
-            // var pickInfo = this.scene.pickWithRay(ray, (mesh) =>{
-            //     return mesh !== this.mesh && mesh !== this.mesh.parent; // 过滤掉目标对象本身
-            // });
-
-            // if (pickInfo.hit && pickInfo.pickedMesh && pickInfo.pickedMesh !== this.mesh 
-            //     && pickInfo.pickedMesh !== this.mesh.parent) {
-            //     // 如果射线与场景中的某个对象相交
-            //     // 且该对象不是目标对象，那么视线被遮挡
-            //     bubble.style.opacity = "0.1";
-            //     // MeshBuilder.CreateLines("ray",{
-            //     //                 points:[
-            //     //                     this.camera.position,
-            //     //                     this.mesh.position
-            //     //                 ]
-            //     //             },this._scene);
-            // }else{
-            //     bubble.style.opacity = "1.0";
-            // }
-        // } else {
-        //     // 角色不在相机的视锥体内
-        //     bubble.style.opacity = "0.0";
-        // }
     }
     private _showMessageBubble(message) {
-        var bubble = document.getElementById('messageBubble');
-        bubble.innerHTML = message;
+        const bubble = document.getElementById('messageBubble');
+        const talktext = bubble.getElementsByClassName("talktext")[0] as HTMLDivElement;
+        talktext.innerHTML = message;
         bubble.style.display = 'block';
     }
     
@@ -624,38 +519,19 @@ export default class PlayerController extends TransformNode {
         bubble.style.display = 'none';
     }
     private _setupPlayerCamera(): Camera {
-        this._camRoot = new TransformNode("root");
-        this._camRoot.position = new Vector3(0, 0, 0);
-        this._camRoot.rotationQuaternion = Quaternion.Zero();
-
-        let yTilt = new TransformNode("ytilt");
-        //adjustments to camera view to point down at our player
-        yTilt.rotation = PlayerController.ORIGINAL_TILT;
-        this._yTilt = yTilt;
-        yTilt.parent = this._camRoot;
-
         //our actual camera that's pointing at our root's position
-        this.camera = new UniversalCamera("cam", new Vector3(0, 0, -30), this.scene);
-        this.camera.lockedTarget = this._camRoot.position;
+        this.camera = new UniversalCamera("cam", new Vector3(0, 20, 30), this.scene);
 
-        this.camera.rotationQuaternion = Quaternion.Zero();
+        // this.camera.rotationQuaternion = Quaternion.Zero();
         // this._scene.getMeshByName("outer").position = this._scene.getTransformNodeByName("start_pos").getAbsolutePosition(); 
-        // this.camera.lockedTarget = this._scene.getMeshByName("outer");
-
+        this.camera.lockedTarget = this.mesh;
         this.camera.fov = 0.47350045992678597;
-        this.camera.fov = 0.27350045992678597;
-        this.camera.parent = yTilt;
 
-        // this.camera = new ArcRotateCamera(
-        //     "camera",
-        //     Math.PI / 2, 
-        //     Math.PI / 2, 
-        //     20, 
-        //     Vector3.Zero(), 
-        //     this._scene);
+        this.camera.parent = this.mesh;
+        this.camera.attachControl(true);
+        this.camera.inputs.clear();
 
-        // this.camera.attachControl(this._canvas,true);
-        // this.camera.attachControl(true);
+        // this.camera.rotationQuaternion = new Quaternion(0,1,0,0);
         this.scene.activeCamera = this.camera;
 
         return this.camera;

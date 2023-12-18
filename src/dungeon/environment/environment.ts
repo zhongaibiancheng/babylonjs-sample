@@ -332,7 +332,9 @@ export default class Environment{
         outer.ellipsoid = new Vector3(1, 1.5, 1);
         outer.ellipsoidOffset = new Vector3(0, 1.5, 0);
 
-        outer.rotationQuaternion = new Quaternion(0, 1, 0, 0);
+        outer.rotation.y += Math.PI;
+        outer.rotationQuaternion = Quaternion.Zero();
+        // outer.rotationQuaternion = new Quaternion(0, 1, 0, 0);
 
         const result = await SceneLoader.ImportMeshAsync(
             null, 

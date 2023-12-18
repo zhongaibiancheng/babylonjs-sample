@@ -13,7 +13,7 @@ export default class InputController{
     public running:boolean = false;
 
     public forward:boolean = false;
-    public backword:boolean = false;
+    public backward:boolean = false;
 
     public left:boolean = false;
     public right:boolean = false;
@@ -66,9 +66,9 @@ export default class InputController{
         }
 
         if(this._inputMap["ArrowDown"]){
-            this.backword = true;
+            this.backward = true;
         }else{
-            this.backword = false;
+            this.backward = false;
         }
 
         if(this._inputMap["Shift"]){
