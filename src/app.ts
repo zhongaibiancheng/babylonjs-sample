@@ -53,5 +53,8 @@
 // import TestCollision from './character/testCollision';
 // const collision = new TestCollision();
 
-import RayTest from './ray/rayTest';
-const ray = new RayTest();
+// import RayTest from './ray/rayTest';
+// const ray = new RayTest();
+
+import Test from './sword/test';
+const test = new Test();

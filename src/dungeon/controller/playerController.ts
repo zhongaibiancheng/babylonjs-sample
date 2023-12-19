@@ -122,7 +122,6 @@ export default class PlayerController extends TransformNode {
 
         this._setUpAnimations();
 
-        // this._showMessageBubble("心情不太好呀今天");
         // this._moveMessageBubble();
     }
     /**
@@ -349,126 +348,12 @@ export default class PlayerController extends TransformNode {
         return this.camera;
     }
 
-    private _moveMessageBubble_(){
-        var advancedTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI");
-
-        var rect1 = new Rectangle();
-        rect1.width = 0.2;
-        rect1.height = "40px";
-        rect1.cornerRadius = 20;
-        rect1.color = "Orange";
-        rect1.thickness = 4;
-        rect1.background = "green";
-        advancedTexture.addControl(rect1);
-        rect1.linkWithMesh(this.mesh);   
-        rect1.linkOffsetY = 50;
-    
-        var label = new TextBlock();
-        label.text = "Sphere";
-        rect1.addControl(label);
-    
-        // var target = new Ellipse();
-        // target.width = "40px";
-        // target.height = "40px";
-        // target.color = "Orange";
-        // target.thickness = 4;
-        // target.background = "green";
-        // advancedTexture.addControl(target);
-        // target.linkWithMesh(this.mesh);
-        // if(this.camera.isInFrustum(this.mesh)){
-        //     //检查角色是否被其他物体遮挡
-        //     const mesh_pos = this.mesh.position.clone();
-        //     mesh_pos.y += 2;
-        //     const direction = mesh_pos.subtract(this.camera.position).normalize();
-        //     var ray = new Ray(
-        //         this.camera.position,
-        //         direction);
-        //     var pickInfo = this.scene.pickWithRay(ray);
-            
-        //     if (pickInfo.hit && pickInfo.pickedMesh !== this.mesh && 
-        //         pickInfo.pickedMesh !== this.mesh.parent) {
-        //         // 角色被遮挡
-        //         console.log("角色被遮挡");
-        //     }
-        // }
-        // // 在你的动画循环中
-        // let position = this.mesh.getAbsolutePosition().clone();
-        // position.y += 1;
-        // // 将3D坐标转换为屏幕坐标
-        // let screenCoords = Vector3.Project(
-        //     position,
-        //     Matrix.IdentityReadOnly,
-        //     this._scene.getTransformMatrix(),
-        //     this.camera.viewport.toGlobal(
-        //         this._engine.getRenderWidth(), 
-        //         this._engine.getRenderHeight())
-        // );
-
-        // // 更新HTML元素的位置
-        // let bubble = document.getElementById('messageBubble');
-        // bubble.style.left = `${screenCoords.x}px`;
-        // bubble.style.top = `${screenCoords.y}px`;
-
-        // var viewport = this.camera.viewport.toGlobal(
-        //     this._engine.getRenderWidth(), 
-        //     this._engine.getRenderHeight());
-
-        // // const position_ = this.mesh.position.clone();
-        // const position_ = this.camera.position;
-        // // position_.y += 1;
-        // var screenCoords_ = Vector3.Project(
-        //     position_,
-        //     Matrix.IdentityReadOnly,
-        //     this.scene.getTransformMatrix(),
-        //     viewport
-        // );
-
-    //     let rayHelper;
-    //     let rayLength = 100;
-    //     if(rayHelper)   rayHelper.dispose()
-	// 	const ray = this.camera.getForwardRay(rayLength)
-    // console.log(ray.direction);
-    //     rayHelper = new RayHelper(ray);		
-	// 	rayHelper.show(this.scene);		
-
-        // 检查屏幕坐标是否在视窗内
-        // if (screenCoords_.x >= 0 && screenCoords_.x <= this._engine.getRenderWidth() &&
-        // screenCoords_.y >= 0 && screenCoords_.y <= this._engine.getRenderHeight()) {
-            // let length = 1000;
-            // // 在这里，您可以执行一些操作，比如显示消息气泡
-            // var rayOrigin = this.camera.position; // 相机的位置作为射线的起点
-            // // var rayDirection = this._camRoot.position.subtract(rayOrigin).normalize(); // 目标位置减去相机位置得到方向向量
-            // var forward = this.camera.getForwardRay(length).direction;
-            // console.log(forward);
-            // var ray = new Ray(rayOrigin, forward.normalize()); // 创建射线
-            
-            // let rayHelper = new RayHelper(ray);
-            // rayHelper.show(this.scene);
-            
-            // var pickInfo = this.scene.pickWithRay(ray, (mesh) =>{
-            //     return mesh !== this.mesh && mesh !== this.mesh.parent; // 过滤掉目标对象本身
-            // });
-
-            // if (pickInfo.hit && pickInfo.pickedMesh && pickInfo.pickedMesh !== this.mesh 
-            //     && pickInfo.pickedMesh !== this.mesh.parent) {
-            //     // 如果射线与场景中的某个对象相交
-            //     // 且该对象不是目标对象，那么视线被遮挡
-            //     bubble.style.opacity = "0.1";
-            //     // MeshBuilder.CreateLines("ray",{
-            //     //                 points:[
-            //     //                     this.camera.position,
-            //     //                     this.mesh.position
-            //     //                 ]
-            //     //             },this._scene);
-            // }else{
-            //     bubble.style.opacity = "1.0";
-            // }
-        // } else {
-        //     // 角色不在相机的视锥体内
-        //     bubble.style.opacity = "0.0";
-        // }
-    }
+   
     private _moveMessageBubble(){
+        // this.camera.computeWorldMatrix(true);
+        // this.mesh.computeWorldMatrix(true);
+        // const camera_target_pos = this.mesh.getAbsolutePosition().add(this.camera.position);
+        
         let camera_target_pos = this.camera.position.clone();
         const quaternion = this.mesh.rotationQuaternion;
 
