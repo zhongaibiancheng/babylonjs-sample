@@ -52,62 +52,20 @@ export default class Environment{
             child.checkCollisions = true;
         });
 
-        this._createBlackboard();
-        if(level === 0){
-            const paper = MeshBuilder.CreateBox("paper",{
-                size:0.3,
-                width:0.3,
-                height:0.3},
-                this._scene);
-            paper.position = this._scene.getTransformNodeByName("paper_pos").getAbsolutePosition();
+        // this._createBlackboard();
+        // if(level === 0){
+        //     const paper = MeshBuilder.CreateBox("paper",{
+        //         size:0.3,
+        //         width:0.3,
+        //         height:0.3},
+        //         this._scene);
+        //     paper.position = this._scene.getTransformNodeByName("paper_pos").getAbsolutePosition();
 
-            paper.actionManager = new ActionManager(this._scene);
-            paper.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPickTrigger,()=>{
-                this._showDialogue();
-            }))
-            // const paper = await this._loadPasswordWithPaper();
-            // paper.scaling.setAll(0.15);
-            // // paper.position = this._scene.getTransformNodeByName("paper_pos").getAbsolutePosition();
-            
-            // const paper_surface = MeshBuilder.CreatePlane(
-            //     "paper",
-            //     {
-            //         // size:2,
-            //         // width:1.8,
-            //         // height:1.8
-            //     },this._scene);
-
-            // paper_surface.position = this._scene.getTransformNodeByName("paper_pos").getAbsolutePosition();
-            // // const text = new StandardMaterial("s",this._scene);
-            // // text.diffuseColor = new Color3(1,0,0);
-            // // paper_surface.material = text;
-            // paper_surface.position.y = 2;
-            // const texture = new DynamicTexture("paper",{width:200,height:200});
-    
-            // const context = texture.getContext();
-            // paper_surface.rotation.y += Math.PI;
-            // paper_surface.rotation.x += Math.PI/2.0;
-            // texture.update();
-    
-            // const paper_material = new CustomMaterial("paper_material",this._scene);
-            // paper_material.diffuseTexture = texture;
-            // paper_material.diffuseTexture.hasAlpha = true;
-    
-            // paper_surface.material = paper_material;
-            // var font = "bold 12px monospace";
-            // const words = "二进制数字转成10进制。\n    1001 0101 0100 0111 0101 0011";
-            // let y = 10;
-    
-            // for (let word of words.split("\n")){
-            //     console.log(word);
-            //     var metrics = context.measureText(word) as any;
-            //     // let fontHeight = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
-            //     let actualHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
-    
-            //     y = y + actualHeight + 10;
-            //     texture.drawText(word, 10, y, font, "black", "transparent", true, true);
-            // }
-        }
+        //     paper.actionManager = new ActionManager(this._scene);
+        //     paper.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPickTrigger,()=>{
+        //         this._showDialogue();
+        //     }))
+        // }
     }
 
     private _showDialogue(){
@@ -182,51 +140,7 @@ export default class Environment{
         return paper;
 
     }
-    /**
-     * 加载各种3d model
-     * @param level 
-     * @returns 
-     */
-    private async _createScene(level:number=0){
-        const scaling = 0.5;
-        const allMeshes = [];
-        const row = 5;
-        const ground = MeshBuilder.CreatePlane("ground",{width:row,height:row},this._scene);
-        const texture = new Texture("./dungeon/textures/stone_ground_1024x1024.png");
-        const material = new StandardMaterial("ground_material",this._scene);
-        material.diffuseTexture = texture;
-
-        ground.material = material;
-
-        ground.rotation.x = Math.PI/2.0;
-        allMeshes.push(ground);
-
-        const wall = MeshBuilder.CreateBox("wall",{width:1,height:1,size:1},this._scene);
-        const texture_wall = new Texture("./dungeon/textures/red_brick_wall-512x512.png");
-        const material_wall = new StandardMaterial("material_wall",this._scene);
-        material_wall.diffuseTexture = texture_wall;
-
-        wall.material = material_wall;
-        allMeshes.push(wall);
-
-        const map = this._createMap(5);
-
-        const offsetZ = -(row)/2.0;
-        const offsetX = -(row)/2.0;
-        for(let i=0;i<map.length/scaling;i++){
-            for(let j=0;j<map[i].length/scaling;j++){
-                if(map[i][j] === 0){//0:wall
-                    const wall_one = wall.clone();
-                    wall_one.position.set(j+offsetX+0.5*scaling,0.5*scaling,i+offsetZ+0.5*scaling);
-                }
-            }
-        }
-        wall.dispose();
-        return {
-            allMeshes:allMeshes
-        }
-    }
-
+   
     private async _loadAssets(level:number=0){
         let level_ = (level + 1) + "";
         
@@ -281,27 +195,6 @@ export default class Environment{
         }
     }
 
-
-    private _createMap(row:number):Array<Array<number>>{
-        // const map = new Array<Array<number>>();
-        
-        // for(let i=0;i<row;i++){
-        //     const row_data = [];
-        //     for(let j=0;j<row;j++){
-        //         row_data.push(Math.random()>0.5?0:1);
-        //     }
-        //     map.push(row_data);
-        // }
-        // return map;
-        const map = [
-            [0,0,0,0,0],
-            [0,1,1,1,0],
-            [0,1,1,1,0],
-            [0,1,1,1,0],
-            [0,0,1,0,0],
-            ]
-        return map;
-    }
     /**
      * 
      * 加载人物和动画
@@ -336,29 +229,29 @@ export default class Environment{
         outer.rotationQuaternion = Quaternion.Zero();
         // outer.rotationQuaternion = new Quaternion(0, 1, 0, 0);
 
-        const result = await SceneLoader.ImportMeshAsync(
-            null, 
-            ASSETS_PATH_MODELS, 
-            "player.glb", 
-        this._scene);
+        // const result = await SceneLoader.ImportMeshAsync(
+        //     null, 
+        //     ASSETS_PATH_MODELS, 
+        //     "player.glb", 
+        // this._scene);
 
-        const root = result.meshes[0];
-        root.scaling.setAll(.1);
-        root.computeWorldMatrix();
+        // const root = result.meshes[0];
+        // root.scaling.setAll(.1);
 
-        const animations = result.animationGroups;
+        // const animations = result.animationGroups;
 
-        //body is our actual player mesh
-        const body = root;
-        body.parent = outer;
-        body.isPickable = false; //so our raycasts dont hit ourself
-        body.getChildMeshes().forEach(m => {
-            m.isPickable = false;
-        });
+        // //body is our actual player mesh
+        // const body = root;
+        // body.parent = outer;
+        // body.isPickable = false; //so our raycasts dont hit ourself
+        // body.getChildMeshes().forEach(m => {
+        //     m.isPickable = false;
+        // });
 
         return {
             outer:outer,
-            animations:animations
+            // animations:animations
+            animations:[]
         };
     }
 }
