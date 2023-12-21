@@ -43,18 +43,25 @@ export default class Test{
         box1.position.y = 0.5;
         box1.position.x = 4;
 
-        const  sphere = MeshBuilder.CreateSphere("sphere",{segments:32,diameter:2},this._scene);
-        sphere.position.x = 0;
-        sphere.position.y = 5;
+        // const  sphere = MeshBuilder.CreateSphere("sphere",{segments:32,diameter:2},this._scene);
+        // sphere.position.x = 0;
+        // sphere.position.y = 5;
 
-        sphere.parent = box1;
+        // sphere.parent = box1;
 
-        box1.rotation.x += Math.PI/4.0;
+        const child = MeshBuilder.CreateBox("child",{
+            size:1,
+            width:1,
+            height:1},
+            this._scene);
+        child.parent = box1;
+        child.position = new Vector3(4,0.5,0);
 
-        box1.computeWorldMatrix(true);
-        sphere.computeWorldMatrix(true);
-        console.log(sphere.position,sphere.getAbsolutePosition());
-        // console.log(sphere.rotation);
+        box1.rotation.x += Math.PI/6.0;
+
+        // box1.computeWorldMatrix(true);
+        // sphere.computeWorldMatrix(true);
+
         console.log(box1.position,box1.getAbsolutePosition());
     }
     

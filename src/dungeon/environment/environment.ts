@@ -213,11 +213,10 @@ export default class Environment{
             }, 
             this._scene);
 
-        outer.isVisible = true;
+        outer.isVisible = false;
         outer.isPickable = false;
         outer.checkCollisions = true;
 
-        outer.scaling.setAll(0.6);
         //move origin of box collider to the bottom of the mesh (to match player mesh)
         outer.bakeTransformIntoVertices(Matrix.Translation(0, 0.4, 0))
 
@@ -232,21 +231,31 @@ export default class Environment{
         this._scene);
 
         const root = result.meshes[0];
-        root.scaling.setAll(0.6);
+        // root.scaling.setAll(0.6);
 
         const animations = result.animationGroups;
-console.log(animations);
 
         //body is our actual player mesh
         const body = root;
-        body.parent = outer;
+        
         body.isPickable = false; //so our raycasts dont hit ourself
         body.getChildMeshes().forEach(m => {
             m.isPickable = false;
         });
-        // outer.rotationQuaternion = Quaternion.Zero();
-        outer.rotationQuaternion = new Quaternion(0, 0.7071, 0, 0.7071);
 
+        // 创建一个单位四元数
+        var quaternion = new Quaternion();
+
+        var rotationAxis = new Vector3(0, 1, 0); // 绕Y轴旋转
+        var rotationAngle = Math.PI / 2; // 90度的弧度
+
+        Quaternion.RotationAxisToRef(rotationAxis, rotationAngle, quaternion);
+
+        outer.rotationQuaternion = quaternion;
+        body.parent = outer;
+        body.rotationQuaternion = null;
+        body.rotation.y -= Math.PI;
+        
         return {
             outer:outer,
             animations:animations

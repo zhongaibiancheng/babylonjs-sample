@@ -7,15 +7,14 @@ import {
     Vector3, 
     Camera, 
     Quaternion, 
-    Ray, ActionManager, ExecuteCodeAction, AnimationGroup, ArcRotateCamera, AxesViewer, Color3, Color4, Engine, HemisphericLight, FreeCamera, MeshBuilder, Matrix, RayHelper, FollowCamera, Axis } from "@babylonjs/core";
+    Ray,
+    AnimationGroup, 
+    Engine, 
+    Matrix,
+} from "@babylonjs/core";
 import InputController from './inputController';
 import Weapon from "../weapon/weapon";
 import FireBall from "../weapon/fireball";
-import { 
-    AdvancedDynamicTexture,Rectangle, Ellipse,
-    InputText,Slider,
-    Button,Container, Control,
-    StackPanel,TextBlock } from "@babylonjs/gui";
 
 export default class PlayerController extends TransformNode {
     public camera;
@@ -47,15 +46,6 @@ export default class PlayerController extends TransformNode {
 
     private win: boolean = false;
 
-    private _action_0:AnimationGroup;
-    private _action_1:AnimationGroup;
-    private _idle: AnimationGroup;
-    private _jump: AnimationGroup;
-    private _death :AnimationGroup;
-    private _back:AnimationGroup;
-    private _fly:AnimationGroup;
-    private _walk:AnimationGroup;
-
     private _preAnims: AnimationGroup;
     private _curAnims: AnimationGroup;
 
@@ -81,9 +71,14 @@ export default class PlayerController extends TransformNode {
     private _engine:Engine;
     private _canvas:HTMLCanvasElement;
     
+    private _idle:AnimationGroup;
+
+    private _animations:{};
+
     constructor(assets: Mesh, scene: Scene,
         shadowGenerator: ShadowGenerator,
-         input?: InputController, animations?: AnimationGroup[],
+         input?: InputController, 
+         animations?: AnimationGroup[],
          engine?:Engine,
          canvas?:HTMLCanvasElement) {
         super("player_controller", scene);
@@ -99,16 +94,8 @@ export default class PlayerController extends TransformNode {
 
         this._setupPlayerCamera();
         this._input = input;
-console.log("player controller init now **********");
 
-        // this._action_0 = animations[0];
-        // this._action_1 = animations[1];
-        // this._back = animations[2];
-        // this._death = animations[3];
-        // this._fly = animations[4];
-        // this._idle = animations[5];
-        // this._jump = animations[6];
-        // this._walk = animations[7];
+        this._convertAnimations(animations);
 
         this._decceleration = new Vector3(-0.0005, -0.0001, -50.0);
         this._acceleration = new Vector3(1, 0.25, 50.0);
@@ -121,9 +108,17 @@ console.log("player controller init now **********");
         //     this.mesh.position.copyFrom(this._lastGroundPos);
         // }));
 
-        // this._setUpAnimations();
+        this._setUpAnimations();
 
         // this._moveMessageBubble();
+    }
+    private _convertAnimations(animations){
+        this._animations = {};
+        for(let animation of animations){
+            this._animations[animation.name] = animation;
+        }
+        console.log(this._animations);
+        this._idle = this._animations['idle'];
     }
     /**
      * 
@@ -155,13 +150,13 @@ console.log("player controller init now **********");
         if (!this._dashPressed && !this._isFalling && !this._jumped
             && (this._input.forward
                 || this._input.backward)) {
-            this._curAnims = this._walk;
+            // this._curAnims = this._walk;
         }
         else if (this._jumped && !this._isFalling && !this._dashPressed) {
-            this._curAnims = this._jump;
+            // this._curAnims = this._jump;
         }
         else if (!this._isFalling && this._grounded) {
-            this._curAnims = this._idle;
+            // this._curAnims = this._idle;
         } 
 
         //Animations
@@ -177,12 +172,7 @@ console.log("player controller init now **********");
             this.mesh.position.x + offsetX,
             this.mesh.position.y + 0.5,
             this.mesh.position.z + offsetZ);
-
-            // MeshBuilder.CreateLines("test",
-            // {
-            //     points:[this.mesh.position,pos]
-            // });
-            
+   
         const ray = new Ray(pos, Vector3.Up().scale(-1), distance);
         const predicate = (mesh) => {
             return mesh.isPickable && mesh.isEnabled();
@@ -266,17 +256,12 @@ console.log("player controller init now **********");
         }
         
         if(forward.length() !==0){
-            //applyRotationQuaternion 旋转的四元祖信息
-            forward = forward.applyRotationQuaternion(this.mesh.rotationQuaternion);
-            forward.normalize();
-
+            this.mesh.computeWorldMatrix(true);
+            forward = this.mesh.forward.normalize();
             forward.scaleInPlace(velocity.z * this._delta_time);
 
             this._moveDirection = forward;
         }
-        // else{
-        //     this._moveDirection = velocity;
-        // }
         return;
     }
     
@@ -410,28 +395,11 @@ console.log("player controller init now **********");
             new Vector3(-20, 4, 0), 
             this.scene);
 
-        // this.camera.rotationQuaternion = Quaternion.Zero();
-        // this._scene.getMeshByName("outer").position = this._scene.getTransformNodeByName("start_pos").getAbsolutePosition(); 
         this.camera.lockedTarget = this.mesh;
-        // this.camera.target = this.mesh.position;
         this.camera.fov = 0.47350045992678597;
 
-        // this.camera.parent = this.mesh;
-        // this.camera.position = this.camera.position.applyRotationQuaternion(this.mesh.rotationQuaternion);
         this.camera.attachControl(true);
         this.camera.inputs.clear();
-
-
-        // this.camera.rotation.y -= Math.PI/2.0;
-        // this.camera.rotationQuaternion = new Quaternion(0, 1, 0, 0);
-        // this.camera = new ArcRotateCamera(
-        //     "camera",
-        // Math.PI / 2,
-        // Math.PI / 2,
-        // 10,
-        // Vector3.Zero(),
-        // this._scene);
-        // this.camera.attachControl(true);
 
         this.scene.activeCamera = this.camera;
 
@@ -485,12 +453,13 @@ console.log("player controller init now **********");
     
     private _setUpAnimations(): void {
         this.scene.stopAllAnimations();
-
         this._idle.loopAnimation = true;
-        this._walk.loopAnimation = true;
-        //initialize current and previous
-        this._curAnims = this._idle;
-        this._preAnims = this._walk;
+
+        this._idle.play(true);
+        // this._walk.loopAnimation = true;
+        // //initialize current and previous
+        // this._curAnims = this._idle;
+        // this._preAnims = this._walk;
     }
 
 }
