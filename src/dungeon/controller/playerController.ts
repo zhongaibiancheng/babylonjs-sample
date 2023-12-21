@@ -99,15 +99,16 @@ export default class PlayerController extends TransformNode {
 
         this._setupPlayerCamera();
         this._input = input;
+console.log("player controller init now **********");
 
-        this._action_0 = animations[0];
-        this._action_1 = animations[1];
-        this._back = animations[2];
-        this._death = animations[3];
-        this._fly = animations[4];
-        this._idle = animations[5];
-        this._jump = animations[6];
-        this._walk = animations[7];
+        // this._action_0 = animations[0];
+        // this._action_1 = animations[1];
+        // this._back = animations[2];
+        // this._death = animations[3];
+        // this._fly = animations[4];
+        // this._idle = animations[5];
+        // this._jump = animations[6];
+        // this._walk = animations[7];
 
         this._decceleration = new Vector3(-0.0005, -0.0001, -50.0);
         this._acceleration = new Vector3(1, 0.25, 50.0);
@@ -120,7 +121,7 @@ export default class PlayerController extends TransformNode {
         //     this.mesh.position.copyFrom(this._lastGroundPos);
         // }));
 
-        this._setUpAnimations();
+        // this._setUpAnimations();
 
         // this._moveMessageBubble();
     }
@@ -228,7 +229,7 @@ export default class PlayerController extends TransformNode {
         if (this._input.running) {
             acc.scaleInPlace(2.0);
         }
-        let forward = new Vector3(0, 0, -1);
+        let forward = new Vector3(0, 0, 1);
 
         if (this._input.forward) {
             velocity.z += acc.z * this._delta_time;
@@ -337,7 +338,7 @@ export default class PlayerController extends TransformNode {
 
         this._animatePlayer();
 
-        this._moveMessageBubble();
+        // this._moveMessageBubble();
     }
 
     public activatePlayerCamera(): UniversalCamera {
@@ -404,19 +405,34 @@ export default class PlayerController extends TransformNode {
         bubble.style.display = 'none';
     }
     private _setupPlayerCamera(): Camera {
-        //our actual camera that's pointing at our root's position
-        this.camera = new UniversalCamera("cam", new Vector3(0, 20, 30), this.scene);
+        this.camera = new UniversalCamera(
+            "cam", 
+            new Vector3(-20, 4, 0), 
+            this.scene);
 
         // this.camera.rotationQuaternion = Quaternion.Zero();
         // this._scene.getMeshByName("outer").position = this._scene.getTransformNodeByName("start_pos").getAbsolutePosition(); 
         this.camera.lockedTarget = this.mesh;
+        // this.camera.target = this.mesh.position;
         this.camera.fov = 0.47350045992678597;
 
-        this.camera.parent = this.mesh;
+        // this.camera.parent = this.mesh;
+        // this.camera.position = this.camera.position.applyRotationQuaternion(this.mesh.rotationQuaternion);
         this.camera.attachControl(true);
         this.camera.inputs.clear();
 
-        // this.camera.rotationQuaternion = new Quaternion(0,1,0,0);
+
+        // this.camera.rotation.y -= Math.PI/2.0;
+        // this.camera.rotationQuaternion = new Quaternion(0, 1, 0, 0);
+        // this.camera = new ArcRotateCamera(
+        //     "camera",
+        // Math.PI / 2,
+        // Math.PI / 2,
+        // 10,
+        // Vector3.Zero(),
+        // this._scene);
+        // this.camera.attachControl(true);
+
         this.scene.activeCamera = this.camera;
 
         return this.camera;

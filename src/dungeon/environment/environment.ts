@@ -207,51 +207,49 @@ export default class Environment{
         const outer = MeshBuilder.CreateBox(
             "outer", 
             { 
-                width: 0.8,
-                depth: 0.7, 
-                height: 1.3
+                width: 0.4,
+                depth: 0.35, 
+                height: 0.4
             }, 
             this._scene);
 
-        outer.scaling.setAll(0.5);
         outer.isVisible = true;
         outer.isPickable = false;
         outer.checkCollisions = true;
 
+        outer.scaling.setAll(0.6);
         //move origin of box collider to the bottom of the mesh (to match player mesh)
-        outer.bakeTransformIntoVertices(Matrix.Translation(0, 0.7, 0))
+        outer.bakeTransformIntoVertices(Matrix.Translation(0, 0.4, 0))
 
         //for collisions
-        outer.ellipsoid = new Vector3(1, 1.5, 1);
-        outer.ellipsoidOffset = new Vector3(0, 1.5, 0);
+        outer.ellipsoid = new Vector3(0.3, 0.25, 0.3);
+        outer.ellipsoidOffset = new Vector3(0, 0.25, 0);
 
-        outer.rotation.y += Math.PI;
-        outer.rotationQuaternion = Quaternion.Zero();
-        // outer.rotationQuaternion = new Quaternion(0, 1, 0, 0);
+        const result = await SceneLoader.ImportMeshAsync(
+            null, 
+            ASSETS_PATH_MODELS, 
+            "boy.glb",
+        this._scene);
 
-        // const result = await SceneLoader.ImportMeshAsync(
-        //     null, 
-        //     ASSETS_PATH_MODELS, 
-        //     "player.glb", 
-        // this._scene);
+        const root = result.meshes[0];
+        root.scaling.setAll(0.6);
 
-        // const root = result.meshes[0];
-        // root.scaling.setAll(.1);
+        const animations = result.animationGroups;
+console.log(animations);
 
-        // const animations = result.animationGroups;
-
-        // //body is our actual player mesh
-        // const body = root;
-        // body.parent = outer;
-        // body.isPickable = false; //so our raycasts dont hit ourself
-        // body.getChildMeshes().forEach(m => {
-        //     m.isPickable = false;
-        // });
+        //body is our actual player mesh
+        const body = root;
+        body.parent = outer;
+        body.isPickable = false; //so our raycasts dont hit ourself
+        body.getChildMeshes().forEach(m => {
+            m.isPickable = false;
+        });
+        // outer.rotationQuaternion = Quaternion.Zero();
+        outer.rotationQuaternion = new Quaternion(0, 0.7071, 0, 0.7071);
 
         return {
             outer:outer,
-            // animations:animations
-            animations:[]
+            animations:animations
         };
     }
 }
