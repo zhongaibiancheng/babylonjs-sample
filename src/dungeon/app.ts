@@ -3,14 +3,12 @@ import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
 import { 
     Engine, Scene, ArcRotateCamera, 
-    Color3,
-    Vector3, HemisphericLight, Mesh, MeshBuilder, 
+    Vector3, HemisphericLight, Mesh,
     AnimationGroup,
     Color4,
     ExecuteCodeAction,
     ActionManager,
-    FreeCamera,
-    Tools} from "@babylonjs/core";
+    FreeCamera} from "@babylonjs/core";
 
 import GameScene from "./scene/gameScene";
 import Environment from "./environment/environment";
@@ -30,6 +28,7 @@ class App{
     _environment:Environment;
 
     _player_mesh:Mesh;
+    _colliders:[];
     _animations:Array<AnimationGroup>;
 
     _level:number = 0;
@@ -37,7 +36,7 @@ class App{
 
     constructor(){
         this._starting_entrance = false;
-        Engine.CollisionsEpsilon = 0.0000005;
+        // Engine.CollisionsEpsilon = 0.0000005;
 
         // this._canvas = this._createCanvas();
         this._canvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -90,6 +89,7 @@ class App{
             game_scene:this._game_scene,
             player_mesh:this._player_mesh,
             animations:this._animations,
+            colliders:this._colliders,
             environment:this._environment,
             level:this._level
         });
@@ -111,6 +111,8 @@ class App{
 
         this._player_mesh = result.outer;
         this._animations  = result.animations;
+        this._colliders = result.colliders;
+
         if(!this._player_mesh.actionManager){
             this._player_mesh.actionManager = new ActionManager(this._game_scene);
         }

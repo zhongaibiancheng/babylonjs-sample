@@ -11,10 +11,15 @@ import {
     AnimationGroup, 
     Engine, 
     Matrix,
+    PhysicsImpostor,
+    CannonJSPlugin,
+    MeshBuilder,
+    ArcRotateCamera
 } from "@babylonjs/core";
 import InputController from './inputController';
 import Weapon from "../weapon/weapon";
 import FireBall from "../weapon/fireball";
+import * as CANNON from 'cannon-es';
 
 export default class PlayerController extends TransformNode {
     public camera;
@@ -72,46 +77,96 @@ export default class PlayerController extends TransformNode {
     private _canvas:HTMLCanvasElement;
     
     private _idle:AnimationGroup;
+    private _walk:AnimationGroup;
+    private _jump:AnimationGroup;
+
+    private _attack_kick_left:AnimationGroup;
+    private _attack_kick_right:AnimationGroup;
 
     private _animations:{};
+
+    private _colliders:[];
 
     constructor(assets: Mesh, scene: Scene,
         shadowGenerator: ShadowGenerator,
          input?: InputController, 
          animations?: AnimationGroup[],
+         colliders?:[],
          engine?:Engine,
          canvas?:HTMLCanvasElement) {
         super("player_controller", scene);
 
         this.scene = scene;
+        this.scene.debugLayer.show();
+
         this._engine = engine;
 
         this._canvas = canvas;
-        this.scene.collisionsEnabled = true;
+        // this.scene.collisionsEnabled = true;
 
         this.mesh = assets;
-        this.mesh.parent = this;
+        //TODO: 2023/12/22 这句话很重要加上的话，物理引擎不起作用
+        //babylonjs 还是很难得
+        // this.mesh.parent = this;
+
+        // this.mesh.position = this._scene.getTransformNodeByName("start_pos").getAbsolutePosition(); 
+        // this.mesh.position.y += 0.5;
 
         this._setupPlayerCamera();
         this._input = input;
 
+        this._colliders = colliders;
+
         this._convertAnimations(animations);
+
+        this._createPhysicsWorld();
 
         this._decceleration = new Vector3(-0.0005, -0.0001, -50.0);
         this._acceleration = new Vector3(1, 0.25, 50.0);
         this._velocity = new Vector3(0, 0, 0);
 
-        // this.mesh.actionManager.registerAction(new ExecuteCodeAction({
-        //     trigger: ActionManager.OnIntersectionEnterTrigger,
-        //     parameter: this.scene.getMeshByName("ground")
-        // }, () => {
-        //     this.mesh.position.copyFrom(this._lastGroundPos);
-        // }));
-
         this._setUpAnimations();
 
         // this._moveMessageBubble();
+
     }
+    private _createPhysicsWorld(){
+
+        
+        // const barrels = this._scene.meshes.filter(mesh=>mesh.name.includes("barrel"));
+        // const barrel_colliders = [];
+        // barrels.forEach(barrel=>{
+        //     barrel.physicsImpostor = new PhysicsImpostor(
+        //         barrel,
+        //         PhysicsImpostor.CylinderImpostor,
+        //         {
+        //         mass:0.1,
+        //         restitution:0.1
+        //     });
+        //     barrel_colliders.push(barrel.physicsImpostor);
+        // });
+
+        // // console.log(this._colliders);
+        // for(let collider of this._colliders){
+        //     (collider as Mesh).physicsImpostor = new PhysicsImpostor(
+        //         collider,
+        //         PhysicsImpostor.BoxImpostor,
+        //         {
+        //             mass:0.1,
+        //             restitution:0.1
+        //         });
+        //         barrel_colliders.forEach((collider_)=>{
+        //             (collider as Mesh).physicsImpostor.registerOnPhysicsCollide(
+        //                 collider_,(main,collided,point)=>{
+        //                     console.log((collider as Mesh).name + " collided with " + (collided.object as any).name + " at point "+point);
+        //                 })
+        //         });
+        // }
+    }
+    /**
+     * 转化传入过来的动画对象为json对象
+     * @param animations 
+     */
     private _convertAnimations(animations){
         this._animations = {};
         for(let animation of animations){
@@ -119,6 +174,11 @@ export default class PlayerController extends TransformNode {
         }
         console.log(this._animations);
         this._idle = this._animations['idle'];
+        this._walk = this._animations['walk'];
+        this._jump = this._animations['jump'];
+
+        this._attack_kick_left = this._animations['attack-kick-left'];
+        this._attack_kick_right = this._animations['attack-kick-right'];
     }
     /**
      * 
@@ -150,13 +210,13 @@ export default class PlayerController extends TransformNode {
         if (!this._dashPressed && !this._isFalling && !this._jumped
             && (this._input.forward
                 || this._input.backward)) {
-            // this._curAnims = this._walk;
+            this._curAnims = this._walk;
         }
         else if (this._jumped && !this._isFalling && !this._dashPressed) {
-            // this._curAnims = this._jump;
+            this._curAnims = this._jump;
         }
         else if (!this._isFalling && this._grounded) {
-            // this._curAnims = this._idle;
+            this._curAnims = this._idle;
         } 
 
         //Animations
@@ -260,7 +320,7 @@ export default class PlayerController extends TransformNode {
             forward = this.mesh.forward.normalize();
             forward.scaleInPlace(velocity.z * this._delta_time);
 
-            this._moveDirection = forward;
+            this._moveDirection = forward.scale(15);
         }
         return;
     }
@@ -289,16 +349,20 @@ export default class PlayerController extends TransformNode {
             this._isFalling = true;
         }
 
-        this._moveDirection = this._moveDirection.addInPlace(this._gravity);
- 
-        this.mesh.moveWithCollisions(this._moveDirection);
+        // this._moveDirection = this._moveDirection.addInPlace(this._gravity);
 
-        this._walking = true;
+        
+        if(this._moveDirection.length() !==0 ){
+
+            console.log(this._moveDirection);
+            this.mesh.physicsImpostor.setLinearVelocity(this._moveDirection);
+            this._walking = true;
+        }
 
         if (this._isGrounded()) {
             this._gravity.y = 0;
             this._grounded = true;
-            this._lastGroundPos.copyFrom(this.mesh.position);
+            // this._lastGroundPos.copyFrom(this.mesh.position);
 
             this._jumpCount = 1;
             this._isFalling = false;
@@ -334,7 +398,6 @@ export default class PlayerController extends TransformNode {
         return this.camera;
     }
 
-   
     private _moveMessageBubble(){
         // this.camera.computeWorldMatrix(true);
         // this.mesh.computeWorldMatrix(true);
@@ -378,6 +441,7 @@ export default class PlayerController extends TransformNode {
             this._showMessageBubble("shit ok fuck \n sb fuck idle");
         }
     }
+
     private _showMessageBubble(message) {
         const bubble = document.getElementById('messageBubble');
         const talktext = bubble.getElementsByClassName("talktext")[0] as HTMLDivElement;
@@ -390,19 +454,30 @@ export default class PlayerController extends TransformNode {
         bubble.style.display = 'none';
     }
     private _setupPlayerCamera(): Camera {
-        this.camera = new UniversalCamera(
-            "cam", 
-            new Vector3(-20, 4, 0), 
-            this.scene);
+        // this.camera = new UniversalCamera(
+        //     "cam", 
+        //     new Vector3(-20, 4, 0), 
+        //     this.scene);
 
-        this.camera.lockedTarget = this.mesh;
-        this.camera.fov = 0.47350045992678597;
+        // this.camera.lockedTarget = this.mesh;
+        // this.camera.fov = 0.47350045992678597;
+
+        // this.camera.attachControl(true);
+        // this.camera.inputs.clear();
+
+        // this.scene.activeCamera = this.camera;
+
+        // return this.camera;
+
+        this.camera = new ArcRotateCamera("cam",
+        -Math.PI/2.0,
+        Math.PI/2.0,
+        10,
+        Vector3.Zero(),this._scene);
 
         this.camera.attachControl(true);
-        this.camera.inputs.clear();
-
-        this.scene.activeCamera = this.camera;
-
+        // this.camera.inputs.remove(this.camera.inputs.attached.key)\camera.inputs.removeByType("ArcRotateCameraKeyboardMoveInput");
+        this.camera.inputs.removeByType("ArcRotateCameraKeyboardMoveInput");
         return this.camera;
     }
 
@@ -454,12 +529,11 @@ export default class PlayerController extends TransformNode {
     private _setUpAnimations(): void {
         this.scene.stopAllAnimations();
         this._idle.loopAnimation = true;
+        this._walk.loopAnimation = true;
 
-        this._idle.play(true);
-        // this._walk.loopAnimation = true;
-        // //initialize current and previous
-        // this._curAnims = this._idle;
-        // this._preAnims = this._walk;
+        //initialize current and previous
+        this._curAnims = this._idle;
+        this._preAnims = this._walk;
     }
 
 }

@@ -30,7 +30,8 @@ export default class GameScene extends BaseScene{
     _animations:Array<AnimationGroup>;
     gui:AdvancedDynamicTexture;
     _canvas:HTMLCanvasElement;
-
+    _colliders:[];
+    
     constructor(engine:Engine,scene:Scene,canvas:HTMLCanvasElement){
         super(engine,scene);
 
@@ -50,6 +51,7 @@ export default class GameScene extends BaseScene{
             undefined,
             input,
             this._animations,
+            this._colliders,
             this._engine,
             this._canvas
             );
@@ -69,11 +71,11 @@ export default class GameScene extends BaseScene{
         const scene = params.game_scene;
         scene.clearColor = new Color4(0, 0, 0);
 
+        this._colliders = params.colliders;
+
         await this._initializeGameAsync(scene);
         
-        scene.getMeshByName("outer").position = scene.getTransformNodeByName("start_pos").getAbsolutePosition(); 
-        // scene.getMeshByName("outer").position = new Vector3(0,0,0);
-        //--WHEN SCENE IS FINISHED LOADING--
+
         await scene.whenReadyAsync();
         this._engine.hideLoadingUI();
 

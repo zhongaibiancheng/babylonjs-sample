@@ -7,6 +7,7 @@ interface SceneParams{
     //loading assets
     setup_game?:()=>Promise<void>|undefined,
 
+    colliders?:[],
     game_scene?:Scene,
     player_mesh?:Mesh,
     environment?:Environment,
