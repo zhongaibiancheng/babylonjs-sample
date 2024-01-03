@@ -59,5 +59,8 @@
 // import Test from './sword/test';
 // const test = new Test();
 
-import Compound from './physics/compoud';
-const compound = new Compound();
+// import Compound from './physics/compoud';
+// const compound = new Compound();
+
+import ActionStudy from './action/ActionStudy';
+const compound = new ActionStudy();
