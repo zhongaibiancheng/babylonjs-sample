@@ -17,6 +17,7 @@ import { ArcRotateCamera, AxesViewer, Color3, Color4,
 
 import "@babylonjs/loaders/glTF";
 import * as CANNON from 'cannon-es';
+import Empty from './Enemy';
 
 //scene 资源
 const ASSETS_PATH = "./dungeon/scene/";
@@ -162,18 +163,20 @@ export default class ActionStudy{
 
         this._createAnimationLabel(animations);
 
-        const result_enemy = await SceneLoader.ImportMeshAsync(null,
-            "./dungeon/models/",
-            "boy.glb",
-            this._scene);
-        const enemy = result_enemy.meshes[0];
+        // const result_enemy = await SceneLoader.ImportMeshAsync(null,
+        //     "./dungeon/models/",
+        //     "boy.glb",
+        //     this._scene);
+        // const enemy = result_enemy.meshes[0];
 
-        enemy.rotationQuaternion = new Quaternion(0,0,0,0);
+        // enemy.rotationQuaternion = new Quaternion(0,0,0,0);
 
-        enemy.position = this._scene.getTransformNodeById("enemy_001").getAbsolutePosition();
-        enemy.scaling.setAll(2);
+        // enemy.position = this._scene.getTransformNodeById("enemy_001").getAbsolutePosition();
+        // enemy.scaling.setAll(2);
 
         // this._scene.stopAllAnimations();
+
+        const enemy = new Empty("a",this._scene);
     }
 
     private _createInputMap(){
