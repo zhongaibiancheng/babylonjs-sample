@@ -67,6 +67,8 @@ export default class Compound{
 
         this.boxes = this._createBoxes();
 
+        this._loadCharacter();
+
         this._createInputMap();
     
         this._main();
@@ -213,18 +215,7 @@ export default class Compound{
 
             this._copyInformationFromOriginal(left_arm,left_arm_mesh);
             this._copyInformationFromOriginal(right_arm,right_arm_mesh);
-            // this._copyInformationFromOriginal(right_arm,right_arm_mesh);
-
-            // right_leg_mesh.position = right_leg.getAbsolutePosition();
-            // let matrix = right_leg.getWorldMatrix();
             
-            // let position_right = Vector3.Zero();
-            // let rotation_right = Quaternion.Zero();
-            // let scaling_right = Vector3.Zero();
-
-            // matrix.decompose(scaling_right,rotation_right,position_right);
-            // right_leg_mesh.rotationQuaternion = rotation_right;
-
             this.boxes.forEach(box=>{
                 //左脚碰撞
                 left_leg_mesh.physicsImpostor.registerOnPhysicsCollide(box.physicsImpostor,(collider,other,point)=>{
@@ -275,6 +266,11 @@ export default class Compound{
         });
     }
 
+    /**
+     * 复制一个part，用来物理检测碰撞
+     * @param original 
+     * @param dest 
+     */
     private _copyInformationFromOriginal(original,dest){
         dest.position = original.getAbsolutePosition();
         let matrix = original.getWorldMatrix();
@@ -285,6 +281,20 @@ export default class Compound{
 
         matrix.decompose(scaling_right,rotation_right,position_right);
         dest.rotationQuaternion = rotation_right;
+    }
+
+    private async _loadCharacter(){
+        const result = await SceneLoader.ImportMeshAsync(
+            null, 
+            './dungeon/weapons/', 
+            "sword_rare.gltf.glb",
+        this._scene
+        );
+
+        const sword = result.meshes[0];
+
+        sword.position.x = 5;
+        sword.position.y = 4;
     }
     private _createLeg(){
         const leg = MeshBuilder.CreateBox("leg",{
