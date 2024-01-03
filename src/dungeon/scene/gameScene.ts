@@ -8,9 +8,6 @@ import {
     HemisphericLight,
     Mesh,
     AnimationGroup,
-    SpriteManager,
-    Sprite,
-    MeshBuilder,
 } from "@babylonjs/core";
 
 import { AdvancedDynamicTexture} from "@babylonjs/gui";

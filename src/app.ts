@@ -56,5 +56,8 @@
 // import RayTest from './ray/rayTest';
 // const ray = new RayTest();
 
-import Test from './sword/test';
-const test = new Test();
+// import Test from './sword/test';
+// const test = new Test();
+
+import Compound from './physics/compoud';
+const compound = new Compound();

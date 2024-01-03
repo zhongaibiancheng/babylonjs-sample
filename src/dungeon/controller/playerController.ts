@@ -11,9 +11,6 @@ import {
     AnimationGroup, 
     Engine, 
     Matrix,
-    PhysicsImpostor,
-    CannonJSPlugin,
-    MeshBuilder,
     ArcRotateCamera
 } from "@babylonjs/core";
 import InputController from './inputController';
@@ -172,7 +169,7 @@ export default class PlayerController extends TransformNode {
         for(let animation of animations){
             this._animations[animation.name] = animation;
         }
-        console.log(this._animations);
+        // console.log(this._animations);
         this._idle = this._animations['idle'];
         this._walk = this._animations['walk'];
         this._jump = this._animations['jump'];
@@ -218,6 +215,8 @@ export default class PlayerController extends TransformNode {
         else if (!this._isFalling && this._grounded) {
             this._curAnims = this._idle;
         } 
+
+        // console.log(this._curAnims);
 
         //Animations
         if (this._curAnims != null && this._preAnims !== this._curAnims) {
@@ -354,7 +353,7 @@ export default class PlayerController extends TransformNode {
         
         if(this._moveDirection.length() !==0 ){
 
-            console.log(this._moveDirection);
+            // console.log(this._moveDirection);
             this.mesh.physicsImpostor.setLinearVelocity(this._moveDirection);
             this._walking = true;
         }
