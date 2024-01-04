@@ -4,7 +4,8 @@ import {
     InputText,Slider,
     Button,Container, Control,
     StackPanel,TextBlock } from "@babylonjs/gui";
-
+import { v4 as uuid } from 'uuid';
+    
 export default class Enemy{
     _id:string;
     _name:string;
@@ -18,9 +19,12 @@ export default class Enemy{
     _deathAnimation:AnimationGroup;
 
     _healthBar:Rectangle;
+    _healthBarContainer:Rectangle;
+    _healthText:TextBlock;
+
+    _idle:AnimationGroup;
 
     constructor(name:string,scene:Scene){
-
         this._id = this._generateId();
         this._name = name;
         this._scene = scene;
@@ -28,8 +32,7 @@ export default class Enemy{
         this._loadModel();
 
         // 在其他对象中监听自定义消息
-        window.addEventListener("damageMessage", 
-        this._damageMessageHandler.bind(this));
+        window.addEventListener("damageMessage", this._damageMessageHandler.bind(this));
     }
 
     /**
@@ -38,31 +41,32 @@ export default class Enemy{
      */
     private _damageMessageHandler(event){
         var message = (event as any).detail;
-        var objB = (event as any).objB;
-        var damageVal =(event as any).damageVal;
+        var objB = (message as any).objB;
+        var damageVal =(message as any).damageVal;
         if(objB.id === this._id){//被攻击的是自己
             this._health -= damageVal;
             if(this._health > 0){
                 this._updateHealthBar();
-            }else{
+            }else if(this._health ===0){
                 this._deathAnimation.play(false);
-
+                this._dispose();
                 setTimeout(()=>{
-                    this._dispose();
                     window.removeEventListener("damageMessage", this._damageMessageHandler.bind(this))
-                },1000);
+                },2000);
             }
         }
     }
 
     private _dispose(){
         this._player.dispose();
+        this._healthBarContainer.dispose();
         this._healthBar.dispose();
     }
 
     private _updateHealthBar(){
         var healthPercentage = this._health / 100;
-        this._healthBar.width = (200 * healthPercentage) + "px"; // 根据生命值百分比调整宽度
+        this._healthText.text = `${this._health}%`;
+        this._healthBar.width = (100 * healthPercentage) + "px"; // 根据生命值百分比调整宽度
     }
 
     private async _loadModel(){
@@ -79,8 +83,10 @@ export default class Enemy{
 
         this._animations = result.animationGroups;
 
-        console.log(this._animations);
-        this._deathAnimation = this._animations[0];
+        this._idle = this._animations[18];
+        this._deathAnimation = this._animations[4];
+
+        this._idle.play(true);
 
         this._createHealthBar();
     }
@@ -88,33 +94,59 @@ export default class Enemy{
     private _createHealthBar(){
         var advancedTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI");
 
+        // 创建一个2D矩形作为健康条的底部背景
+        var healthBarBackground = new Rectangle();
+        healthBarBackground.width = "100px";
+        healthBarBackground.height = "16px";
+        healthBarBackground.cornerRadius = 8;
+        healthBarBackground.color = "white";
+        healthBarBackground.background = "black";
+
+        this._healthBarContainer = healthBarBackground;
+        this._healthBarContainer.linkOffsetX = "20px";
+        this._healthBarContainer.linkOffsetY = "-50px";
+
+        advancedTexture.addControl(healthBarBackground);
+
+        // 创建一个2D矩形作为健康条的显示
         var healthBar = new Rectangle();
-        healthBar.width = "200px";
-        healthBar.height = "20px";
-        healthBar.cornerRadius = 10;
+        healthBar.width = "100%";
+        healthBar.height = "100%";
         healthBar.color = "red";
+        healthBar.background="red";
+
+        healthBar.cornerRadius = 10;
         healthBar.thickness = 1;
-        healthBar.linkOffsetX = "20px";
-        healthBar.linkOffsetY = "-50px";
-        advancedTexture.addControl(healthBar);
+        healthBar.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
+        healthBarBackground.addControl(healthBar);
+        // advancedTexture.addControl(healthBar);
 
         this._healthBar = healthBar;
+
+        var text1 = new TextBlock("health");
+    
+        text1.fontFamily = "Helvetica";
+        text1.textWrapping = true;
+        
+        text1.text = `${this._health}%`;
+        text1.color = "white";
+        text1.fontSize = "10px";
+
+        this._healthText = text1;
+        healthBarBackground.addControl(text1);
+
         // 将生命值条绑定到角色模型
         this._scene.registerBeforeRender( ()=>{
-            this._healthBar.linkWithMesh(this._player);
-            // this._healthBar.linkOffsetX =  "10px";
-            // this._healthBar.linkOffsetY =  "30px";
+            this._healthBarContainer.linkWithMesh(this._player);
         });
     }
 
     private _generateId():string{
-        return "";
+        return uuid();
     }
 
     get id(): string {
         return this._id;
     }
-
-    public 
 
 }

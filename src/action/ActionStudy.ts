@@ -18,6 +18,7 @@ import { ArcRotateCamera, AxesViewer, Color3, Color4,
 import "@babylonjs/loaders/glTF";
 import * as CANNON from 'cannon-es';
 import Empty from './Enemy';
+import Enemy from './Enemy';
 
 //scene 资源
 const ASSETS_PATH = "./dungeon/scene/";
@@ -35,7 +36,8 @@ export default class ActionStudy{
     boxes:Array<Mesh>;
 
     _walk:AnimationGroup;
-
+    _enemy:Enemy;
+    
     constructor(){
         const canvas = document.getElementById("canvas") as HTMLCanvasElement;
         this._engine = new Engine(canvas);
@@ -77,8 +79,18 @@ export default class ActionStudy{
                 this._player.rotationQuaternion = this._player.rotationQuaternion.multiply(
                     Quaternion.RotationAxis(Axis.Y, Math.PI / 80) // 30 度对应的弧度是 Math.PI / 6
                 );
-            }else if(this._input && this._input["l"]){
+            }else if(this._input && this._input["l"]&&
+                this._input["l"]['down']&&
+                !this._input["l"]['done']){
                 // this._kick_right.play(false);
+                const message = new CustomEvent("damageMessage",{
+                    detail:{
+                        objB:this._enemy,
+                        damageVal:10
+                    }
+                });
+                window.dispatchEvent(message);
+                this._input["l"]['done'] = true;
             }
             else if(this._input && this._input["n"]){
                 // this.attack_melee_left.play(false);
@@ -163,20 +175,8 @@ export default class ActionStudy{
 
         this._createAnimationLabel(animations);
 
-        // const result_enemy = await SceneLoader.ImportMeshAsync(null,
-        //     "./dungeon/models/",
-        //     "boy.glb",
-        //     this._scene);
-        // const enemy = result_enemy.meshes[0];
-
-        // enemy.rotationQuaternion = new Quaternion(0,0,0,0);
-
-        // enemy.position = this._scene.getTransformNodeById("enemy_001").getAbsolutePosition();
-        // enemy.scaling.setAll(2);
-
-        // this._scene.stopAllAnimations();
-
         const enemy = new Empty("a",this._scene);
+        this._enemy = enemy;
     }
 
     private _createInputMap(){
@@ -186,12 +186,18 @@ export default class ActionStudy{
 
         this._scene.actionManager.registerAction(new ExecuteCodeAction(
             ActionManager.OnKeyDownTrigger, (evt) =>{
-            this._input[evt.sourceEvent.key] = evt.sourceEvent.type == "keydown";
+            this._input[evt.sourceEvent.key] = {
+                down:evt.sourceEvent.type == "keydown",
+                done:false
+            }
         }));
 
         this._scene.actionManager.registerAction(new ExecuteCodeAction(
             ActionManager.OnKeyUpTrigger, (evt) =>{
-            this._input[evt.sourceEvent.key] = evt.sourceEvent.type == "keydown";
+            this._input[evt.sourceEvent.key] = {
+                down:evt.sourceEvent.type == "keydown",
+                done:false
+            };
         }));
 
     }
