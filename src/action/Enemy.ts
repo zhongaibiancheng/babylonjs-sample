@@ -69,6 +69,9 @@ export default class Enemy{
         this._healthBar.width = (100 * healthPercentage) + "px"; // 根据生命值百分比调整宽度
     }
 
+    getRandomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
     private async _loadModel(){
         const result = await SceneLoader.ImportMeshAsync(null,
             "./dungeon/models/",
@@ -78,9 +81,16 @@ export default class Enemy{
         this._player = result.meshes[0] as Mesh;
         this._player.rotationQuaternion = new Quaternion(0,0,0,0);
 
-        this._player.position = this._scene.getTransformNodeById("enemy_001").getAbsolutePosition();
+        // this._player.position = this._scene.getTransformNodeById("enemy_001").getAbsolutePosition();
+        this._player.position = new Vector3(
+            this.getRandomInt(-10,10),
+            0,
+            this.getRandomInt(-20,20));
+
         this._player.scaling.setAll(2);
 
+        this._player.checkCollisions = true;
+        
         this._animations = result.animationGroups;
 
         this._idle = this._animations[18];
@@ -125,12 +135,14 @@ export default class Enemy{
 
         var text1 = new TextBlock("health");
     
-        text1.fontFamily = "Helvetica";
-        text1.textWrapping = true;
+        // text1.fontFamily = "Helvetica";
+        // text1.textWrapping = true;
         
         text1.text = `${this._health}%`;
         text1.color = "white";
         text1.fontSize = "10px";
+
+        text1.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
 
         this._healthText = text1;
         healthBarBackground.addControl(text1);
@@ -149,4 +161,7 @@ export default class Enemy{
         return this._id;
     }
 
+    get player():Mesh{
+        return this._player;
+    }
 }
