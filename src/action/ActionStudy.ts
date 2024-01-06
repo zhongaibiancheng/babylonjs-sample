@@ -10,13 +10,14 @@ import { ArcRotateCamera, AxesViewer, Color3, Color4,
       ExecuteCodeAction,
       SceneLoader,
       AnimationGroup,
+      Animation,
       Quaternion,
       Axis,
       Texture,
-      Vector4,
       ParticleSystem,
       TrailMesh,
-      Tools} from "@babylonjs/core";
+      ShaderMaterial,
+      Effect} from "@babylonjs/core";
 
 import "@babylonjs/loaders/glTF";
 import * as CANNON from 'cannon-es';
@@ -70,8 +71,6 @@ export default class ActionStudy{
         this._createInputMap();
     
         this._createAction();
-
-        // this._test();
 
         this._main();
     }
@@ -156,7 +155,7 @@ export default class ActionStudy{
         })
     }
     private _createFlameParticle(sword){
-        // var ps1 = new ParticleSystem("ps1", 2000, this._scene);
+        // var ps1 = new ParticleSystem("ps1", 100, this._scene);
 
         // const url = "/textures/fire.jpg";
         // ps1.particleTexture = new Texture(url, this._scene);
@@ -164,10 +163,10 @@ export default class ActionStudy{
         // ps1.minSize = 0.1;
         // ps1.maxSize = 0.3;
         // ps1.minLifeTime = 1;
-        // ps1.maxLifeTime = 15;
+        // ps1.maxLifeTime = 1.1;
 
         // ps1.minEmitPower = 1;
-        // ps1.maxEmitPower = 5;
+        // ps1.maxEmitPower = 1.1;
 
         // ps1.minAngularSpeed = 0;
         // ps1.maxAngularSpeed = 0;
@@ -175,14 +174,14 @@ export default class ActionStudy{
         // const emitter = MeshBuilder.CreateBox("mesh",{size:.1});
         // emitter.isVisible = false;
         // emitter.position.y += 1;
-        // emitter.position.x -= 0;
-        // emitter.position.z = 0;
+        // emitter.position.x -= 0.05;
+        // emitter.position.z -= 0.1;
         // emitter.rotation.x = Math.PI/2.0;
 
         // emitter.parent = sword; 
         // ps1.emitter = emitter;
 
-        // ps1.emitRate = 20;
+        // ps1.emitRate = 100;
 
         // ps1.updateSpeed = 1;
         // ps1.blendMode = ParticleSystem.BLENDMODE_ONEONE;
@@ -199,53 +198,6 @@ export default class ActionStudy{
         // // turn the key! vrooom!
         // ps1.start();
 
-        // // 创建剑气特效
-        // var swordTrail = new ParticleSystem("swordTrail", 4000, this._scene);
-        // swordTrail.particleTexture = new Texture("/textures/fire.jpg", this._scene);
-
-        // const emitter = MeshBuilder.CreateBox("mesh",{size:.1});
-        // emitter.isVisible = false;
-        // emitter.position.y += 1;
-        // emitter.position.x -= 0;
-        // emitter.position.z = 0;
-        // emitter.rotation.x = Math.PI/2.0;
-
-        // emitter.parent = sword; 
- 
-        // swordTrail.emitter = emitter; // 剑气起始点
-
-        // // swordTrail.minEmitBox = new Vector3(-1, 0, 0); // 发射盒子的最小坐标
-        // // swordTrail.maxEmitBox = new Vector3(1, 0, 0); // 发射盒子的最大坐标
-
-        // swordTrail.color1 = new Color4(1, 0, 0, 1); // 开始颜色
-        // swordTrail.color2 = new Color4(1, 1, 0, 0); // 结束颜色
-        // swordTrail.minSize = 0.1;
-        // swordTrail.maxSize = 0.2;
-        // swordTrail.minLifeTime = 0.1;
-        // swordTrail.maxLifeTime = 0.5;
-        // swordTrail.emitRate = 1000;
-        
-        // swordTrail.blendMode = ParticleSystem.BLENDMODE_ONEONE;
-
-        // // swordTrail.direction1 = new Vector3(-1, 0, 0);
-        // // swordTrail.direction2 = new Vector3(-2, 0, 0);
-
-        // swordTrail.direction1 = new Vector3(-.5, 1, .5);
-        // swordTrail.direction2 = new Vector3(0.5, -.2, -.5);
-
-        // swordTrail.minEmitBox = new Vector3(.01, .01, 1);
-        // swordTrail.maxEmitBox = new Vector3(.04, .04, -1);
-
-        // swordTrail.minAngularSpeed = 0;
-        // swordTrail.maxAngularSpeed = Math.PI;
-
-        // swordTrail.minEmitPower = 2;
-        // swordTrail.maxEmitPower = 5;
-        // swordTrail.updateSpeed = 0.007;
-
-        // swordTrail.start();
-
-
         // 创建 TrailingMesh
         const sword_p = MeshBuilder.CreateBox("b",{width:0.1,height:2,depth:0.01},this._scene);
         sword_p.parent = sword;
@@ -259,31 +211,73 @@ export default class ActionStudy{
         trailingMesh.material = material;
     }
 
-    private _test(){
-        // 创建一个 Mesh 作为扇形形状
-        var radius = 2; // 扇形半径
-        var startAngle = 0; // 扇形起始角度（弧度）
-        var endAngle = Math.PI / 2; // 扇形结束角度（弧度）
-        var tessellation = 100; // 分段数
+    private _createFootCircle(){
+        // Create a particle system
+        var particleSystem = new ParticleSystem("particles", 1000, this._scene);
 
-        var fanShape = MeshBuilder.CreateCylinder("fanShape", {
-            height: 0.1,
-            diameterTop: radius * 2,
-            diameterBottom: radius * 2,
-            tessellation: tessellation,
-            arc: endAngle - startAngle
-        }, this._scene);
+        //Texture of each particle
+        particleSystem.particleTexture = new Texture("textures/fire.jpg", this._scene);
 
-        fanShape.position.y = 2;
-        // 创建 TrailMesh
-        var fanTrail = new TrailMesh("fanTrail", fanShape, this._scene);
-        const trailMaterial = new StandardMaterial("fanTrailMaterial", this._scene);
-        trailMaterial.emissiveColor = new Color3(1, 0, 0); // 设置颜色
-        trailMaterial.backFaceCulling = false; // 剔除背面
-        trailMaterial.wireframe = false; // 非线框模式
+        // Where the particles come from
+        // particleSystem.emitter = Vector3.Zero(); // the starting location
+        const cirle_particle_emitter = MeshBuilder.CreateBox(
+            "cirle_particle_emitter",
+            {size:1},
+            this._scene);
 
-                
+        cirle_particle_emitter.parent = this._player;
+        // cirle_particle_emitter.isVisible = false;
+        cirle_particle_emitter.checkCollisions = false;
+        cirle_particle_emitter.isPickable = false;
+
+        particleSystem.emitter = cirle_particle_emitter;
+
+        particleSystem.direction1 = new Vector3(0, 0.2, 0);
+        particleSystem.direction2 = new Vector3(0, 0.2, 0);
+
+        // Colors of all particles
+        particleSystem.color1 = new Color4(0.7, 0.8, 1.0, 1.0);
+        particleSystem.color2 = new Color4(0.2, 0.5, 1.0, 1.0);
+        particleSystem.colorDead = new Color4(0, 0, 0.2, 0.0);
+
+        // Size of each particle (random between...
+        particleSystem.minSize = 0.1;
+        particleSystem.maxSize = 0.12;
+
+        // Life time of each particle (random between...
+        particleSystem.minLifeTime = 0.1;
+        particleSystem.maxLifeTime = 0.20;
+
+        // Emission rate
+        particleSystem.emitRate = 4000;
+
+        var radius = 1.5; // 圆形的半径
+        // particleSystem.startPositionFunction = function (
+        //     worldMatrix, 
+        //     positionToUpdate, 
+        //     particle, 
+        //     isLocal) {
+        //     var angle = Math.random() * Math.PI * 2;
+        //     var distance = radius;
+        //     positionToUpdate.x = distance * Math.cos(angle);
+        //     positionToUpdate.z = distance * Math.sin(angle);
+        //     positionToUpdate.y = 0.3; // 根据需要调整z坐标
+        // };
+
+        // Speed
+        particleSystem.minEmitPower = 1;
+        particleSystem.maxEmitPower = 3;
+        particleSystem.updateSpeed = 0.005;
+
+        // Start the particle system
+        particleSystem.start();
     }
+
+    async _loadShaderFile(url) {
+        const response = await fetch(url);
+        return response.text();
+    }
+
     private async _createPhysicsWorld():Promise<void>{
         const ground = MeshBuilder.CreateGround("ground",{width:45,height:46},this._scene);
         const mtl = new StandardMaterial("ground",this._scene);
@@ -317,11 +311,72 @@ export default class ActionStudy{
         this._scene);
 
         const root = result.meshes[0] as Mesh;
-console.log(result.animationGroups);
-const idle = result.animationGroups[36];
-idle.play(true);
+        // console.log(result.animationGroups);
+        const idle = result.animationGroups[36];
+        idle.play(true);
         // root.scaling.setAll(scaling);
         this._player = root;
+
+        // this._createFootCircle();
+
+        // 创建一个环形网格作为光环
+        var halo = MeshBuilder.CreateTorus("halo", { 
+            diameter: 2.6, 
+            thickness: 0.2,
+            tessellation: 30
+        }, this._scene);
+
+        // 将光环放置在角色周围
+        halo.position = this._player.position.clone();
+        halo.position.y += 0.3; // Y轴上向上移动1单位
+
+        Effect.ShadersStore['customVertexShader'] = `
+        precision highp float;
+        attribute vec3 position;
+        uniform mat4 worldViewProjection;
+        
+        void main() {
+            vec4 p = vec4(position, 1.);
+            gl_Position = worldViewProjection * p;
+        }
+    `;
+
+        Effect.ShadersStore['customFragmentShader'] = `
+        precision highp float;
+
+        uniform float time;
+        void main() {
+            float blink = abs(sin(time));
+            if(blink < 0.85){
+                blink = 0.85;
+            }
+            // 定义光环的颜色
+            vec3 color = vec3(0.5, 0.8, 1.0); // 蓝色
+
+            // 应用闪烁因子到光环颜色
+            color *= blink;
+
+            // 设置片段的最终颜色
+            gl_FragColor = vec4(color, .1); // 完全不透明
+        }
+    `;
+        var shaderMaterial = new ShaderMaterial('custom', this._scene, 'custom', {
+                uniforms: ["worldViewProjection","time"]
+        });
+        
+        // 更新时间uniform
+        var time = 0;
+        this._scene.onBeforeRenderObservable.add(() => {
+            time += this._scene.getEngine().getDeltaTime() * 0.001; // 将时间转换为秒
+            shaderMaterial.setFloat("time", time);
+        });
+        halo.material = shaderMaterial;
+
+        // 在渲染循环中更新光环位置
+        this._scene.onBeforeRenderObservable.add(() => {
+            halo.position.x = this._player.position.x;
+            halo.position.z = this._player.position.z;
+        });
 
         let h2_sword,h1_sword;
         this._player.getChildMeshes().forEach(mesh=>{
