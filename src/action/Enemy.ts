@@ -1,4 +1,8 @@
-import { AnimationGroup, Mesh, Quaternion, Scene, SceneLoader, Vector3 } from "@babylonjs/core";
+import { AnimationGroup, 
+    Matrix, 
+    Mesh, MeshBuilder, Quaternion, Scene,
+    Animation,
+    SceneLoader, Vector3, StandardMaterial, Color3, Camera, Engine } from "@babylonjs/core";
 import { 
     AdvancedDynamicTexture,Rectangle, 
     InputText,Slider,
@@ -10,6 +14,9 @@ export default class Enemy{
     _id:string;
     _name:string;
 
+    _camera:Camera;
+    _engine:Engine;
+    
     _animations:Array<AnimationGroup>;
 
     _scene:Scene;
@@ -24,10 +31,15 @@ export default class Enemy{
 
     _idle:AnimationGroup;
 
-    constructor(name:string,scene:Scene){
+    _damageText:TextBlock;
+    _damagePlane:Mesh;
+
+    constructor(name:string,engine:Engine,camera:Camera,scene:Scene){
         this._id = this._generateId();
         this._name = name;
         this._scene = scene;
+        this._camera = camera;
+        this._engine = engine;
 
         this._loadModel();
 
@@ -44,10 +56,15 @@ export default class Enemy{
         var objB = (message as any).objB;
         var damageVal =(message as any).damageVal;
         if(objB.id === this._id){//被攻击的是自己
+            if(this._health<damageVal){
+                damageVal = this._health
+            }
             this._health -= damageVal;
+
             if(this._health > 0){
                 this._updateHealthBar();
-            }else if(this._health ===0){
+                this._showDamage(`-${damageVal}`);
+            }else if(this._health <=0){
                 this._deathAnimation.play(false);
                 this._dispose();
                 setTimeout(()=>{
@@ -61,6 +78,34 @@ export default class Enemy{
         this._player.dispose();
         this._healthBarContainer.dispose();
         this._healthBar.dispose();
+    }
+
+    private _showDamage(damage) {
+        // 创建一个动画使文本上移
+        var animation = new Animation(
+            "textAnimation", 
+            "linkOffsetY", 
+            30, 
+            Animation.ANIMATIONTYPE_FLOAT, 
+            Animation.ANIMATIONLOOPMODE_CYCLE);
+
+        this._damageText.isVisible = true;
+
+        this._damageText.text = damage;
+
+        var keys = []; 
+        keys.push({ frame: 0, value: -20 });
+        keys.push({ frame: 30, value: -50 });
+        animation.setKeys(keys);
+
+        this._scene.beginDirectAnimation(
+            this._damageText, 
+            [animation], 
+            0, 
+            50, 
+            false,1,()=>{
+                this._damageText.isVisible = false;
+            });
     }
 
     private _updateHealthBar(){
@@ -78,18 +123,30 @@ export default class Enemy{
             "boy.glb",
             this._scene);
         
-        this._player = result.meshes[0] as Mesh;
-        this._player.rotationQuaternion = new Quaternion(0,0,0,0);
+        const player = result.meshes[0] as Mesh;
 
-        // this._player.position = this._scene.getTransformNodeById("enemy_001").getAbsolutePosition();
-        this._player.position = new Vector3(
+        player.scaling.setAll(2);
+
+        player.position = new Vector3(0,-0.7,0);
+        const outer = MeshBuilder.CreateBox("_enemey_"+this._id,{
+            height:1.4,
+            width:0.6,
+            depth:0.5
+        });
+        outer.checkCollisions = true;
+        player.parent = outer;
+
+        outer.position = new Vector3(
             this.getRandomInt(-10,10),
-            0,
+            0.7,
             this.getRandomInt(-20,20));
+        
+        outer.rotationQuaternion = Quaternion.Zero();
 
-        this._player.scaling.setAll(2);
+        this._player = outer;
 
-        this._player.checkCollisions = true;
+        outer.isVisible = false;
+        // this._player.checkCollisions = true;
         
         this._animations = result.animationGroups;
 
@@ -99,6 +156,23 @@ export default class Enemy{
         this._idle.play(true);
 
         this._createHealthBar();
+
+        this._createDamageBar();
+    }
+
+    private _createDamageBar(){
+        const advancedTexture = AdvancedDynamicTexture.CreateFullscreenUI("damge_bar");
+        const damageText = new TextBlock();
+        damageText.color = "red";
+        damageText.fontSize = "15px";
+
+        advancedTexture.addControl(damageText);
+        // 将文本附加到被伤害者上
+        damageText.linkWithMesh(this._player);
+        damageText.linkOffsetY = -20;  // 调整文本的初始位置
+
+        this._damageText = damageText;
+        this._damageText.isVisible = false;
     }
 
     private _createHealthBar(){
@@ -135,9 +209,6 @@ export default class Enemy{
 
         var text1 = new TextBlock("health");
     
-        // text1.fontFamily = "Helvetica";
-        // text1.textWrapping = true;
-        
         text1.text = `${this._health}%`;
         text1.color = "white";
         text1.fontSize = "10px";
