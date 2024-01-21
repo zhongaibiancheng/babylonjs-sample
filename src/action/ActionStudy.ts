@@ -19,12 +19,16 @@ import { ArcRotateCamera, AxesViewer, Color3, Color4,
       ShaderMaterial,
       Effect,
       Matrix,
-      Camera} from "@babylonjs/core";
+      RecastJSPlugin,
+      Camera,
+      PointerEventTypes,
+      TransformNode} from "@babylonjs/core";
 
 import "@babylonjs/loaders/glTF";
 import * as CANNON from 'cannon-es';
 
 import Enemy from './Enemy';
+import * as Recast from "recast-detour";
 
 //scene 资源
 const ASSETS_PATH = "./dungeon/scene/";
@@ -50,6 +54,10 @@ export default class ActionStudy{
     _camera:Camera;
 
     _trailingMesh:TrailMesh;
+
+    navigationPlugin:RecastJSPlugin;
+
+    _crowd:any;
 
     constructor(){
         this._enemies = new Array<Enemy>();
@@ -81,9 +89,58 @@ export default class ActionStudy{
     
         this._createAction();
 
+        // this._createWalls();
+
+        //自动计算路径 前提是需要正确的初始化插件（包括所有的mesh，用于计算路径的时候跳过）
+        this._createNavMesh(this._enemies);
+
+        
         this._main();
     }
 
+    private _createWalls(){
+        const wall = MeshBuilder.CreateBox("wall",{
+            width:16,
+            height:8,
+            depth:0.3
+        });
+        wall.position.y = 4;
+        wall.position.x = 8;
+
+        const texture = new Texture("/textures/brick_wall.png",this._scene);
+        const material = new StandardMaterial("wall");
+        material.diffuseTexture = texture;
+
+        wall.material = material;
+
+        const wall1 = wall.clone();
+        wall1.position.x = 16;
+        wall1.rotation.y += Math.PI/2.0;
+        wall1.position.z = -8;
+
+        const plane = MeshBuilder.CreateBox("plane",{
+            width:8,
+            height:3,
+            depth:0.3
+        },this._scene);
+        plane.position.z = -1.5;
+        plane.position.x = 5;
+        plane.position.y = 1.5;
+        plane.rotation.x = Math.PI/2.0;
+
+        const slope_texture = new Texture("/textures/wooden_floor.png",this._scene);
+        const slope_material = new StandardMaterial("slope_material");
+        slope_material.diffuseTexture = slope_texture;
+
+        plane.material = slope_material;
+
+        const slope = plane.clone("slope")
+        slope.position.x = 5;
+        slope.position.z = -4;
+        slope.position.y = 0.65;
+        slope.rotation.x -= Math.PI/5.0;
+
+    }
     private _createAction(){
         this._scene.registerAfterRender(()=>{
             if(this._input && this._input["k"]){
@@ -166,6 +223,178 @@ export default class ActionStudy{
         this._trailingMesh.isVisible = false;
     }
 
+    private async _createNavMesh(enemies){
+        await this._scene.whenReadyAsync();
+        // initialize the recast plugin
+        this.navigationPlugin = new RecastJSPlugin(await (Recast as any)());
+        var navmeshParameters = {
+            cs: 0.2,
+            ch: 0.2,
+            walkableSlopeAngle: 90,
+            walkableHeight: 1.0,
+            walkableClimb: 1,
+            walkableRadius: 1,
+            maxEdgeLen: 12.,
+            maxSimplificationError: 1.3,
+            minRegionArea: 8,
+            mergeRegionArea: 20,
+            maxVertsPerPoly: 6,
+            detailSampleDist: 6,
+            detailSampleMaxError: 1,
+        };
+
+        this.navigationPlugin.createNavMesh(
+            this._scene.meshes as any,
+            navmeshParameters);
+
+        this._crowd = this.navigationPlugin.createCrowd(
+            10,
+            0.1,
+            this._scene);
+
+        var agentParams = {
+            radius: 0.1,
+            height: 0.2,
+            maxAcceleration: 4.0,
+            maxSpeed: 3.0,
+            collisionQueryRange: 0.5,
+            pathOptimizationRange: 0.0,
+            separationWeight: 1.0
+        };
+
+        const result = await SceneLoader.ImportMeshAsync(null,
+            "./dungeon/models/",
+            "boy.glb",
+            this._scene);
+        
+        const player = result.meshes[0] as Mesh;
+
+        player.scaling.setAll(2);
+
+        const helper = new AxesViewer(this._scene,3);
+        helper.xAxis.parent = player;
+        helper.yAxis.parent = player;
+        helper.zAxis.parent = player;
+
+        for(let i=0;i<enemies.length;i++){
+            // const agentCube = MeshBuilder.CreateBox("box",{size:0.2},this._scene);
+            var randomPos = this.navigationPlugin.getRandomPointAround(
+                new Vector3(-2.0, 0.1, -1.8), 0.5);
+
+            // const agentCube = enemies[i].player;
+            const agentCube = player.clone();
+            // const randomPos = agentCube.getAbsolutePosition();
+
+            var transform = new TransformNode("test_"+i);
+            agentCube.parent = transform;
+
+            const agentIndex = this._crowd.addAgent(randomPos, agentParams, transform);
+            agentCube.metadata = {agentIndex:agentIndex};
+        }
+
+        player.dispose();
+
+        this._scene.onPointerObservable.add(pointerInfo=>{
+            switch(pointerInfo.type){
+                case PointerEventTypes.POINTERDOWN:
+                        const mesh = this.getMeshByAgentIndex(0);
+
+                        // mesh.computeWorldMatrix(true);
+
+    
+                        // MeshBuilder.CreateLines("line",{
+                        //     points:[mesh.getAbsolutePosition(),rotatedVector]
+                        // });
+                        MeshBuilder.CreateLines("line",{
+                            points:[mesh.getAbsolutePosition(),Vector3.Zero()]
+                        });
+                        const forward = mesh.forward.normalize();
+                        const pos = mesh.getAbsolutePosition().normalize();
+
+                        // 计算点积
+var dotProduct = Vector3.Dot(pos,forward);
+
+// 计算两个向量的模
+var magnitudeVector1 = forward.length();
+var magnitudeVector2 = pos.length();
+
+// 计算夹角（以弧度为单位）
+var angleInRadians = Math.acos(dotProduct / (magnitudeVector1 * magnitudeVector2));
+
+// 如需将弧度转换为度，可以使用以下转换
+var angleInDegrees = angleInRadians * (180 / Math.PI);
+console.log(angleInRadians,angleInDegrees,mesh.forward.normalize());
+// mesh.rotation.y += angleInRadians;
+mesh.rotationQuaternion = Quaternion.RotationAxis(Axis.Y, angleInRadians);
+
+
+                        MeshBuilder.CreateLines("line",{
+                            points:[mesh.getAbsolutePosition(),forward.scale(5)]
+                        });
+                        break;
+                        // const picked = this._pickedPosition();
+                        // if(picked){
+                        //     const end_position = picked;
+
+                        //     let agents = this._crowd.getAgents();
+                        //     for(let i=0;i<agents.length;i++){
+                        //         this._crowd.agentGoto(
+                        //             agents[i], 
+                        //             this.navigationPlugin.getClosestPoint(end_position));
+                        //         // var randomPos = this.navigationPlugin.getRandomPointAround(end_position, 1.0);
+                        //         // 4. 计算朝向
+                        //         var direction = end_position.subtract(this._crowd.getAgentPosition(agents[i])).normalize();
+                        //         console.log(direction);
+
+                        //         // 5. 旋转模型
+                        //         var yaw = Math.atan2(direction.z, direction.x);
+                        //         // var pitch = -Math.atan2(direction.y, Math.sqrt(direction.x * direction.x + direction.z * direction.z));
+                        //         this._crowd.transforms[i].rotationQuaternion.multiply(
+                        //         Quaternion.RotationYawPitchRoll(yaw, 0, 0));
+                                
+                        //         var pathPoints = this.navigationPlugin.computePath(
+                        //                 this._crowd.getAgentPosition(agents[i]), 
+                        //                 this.navigationPlugin.getClosestPoint(end_position));
+
+                        //         MeshBuilder.CreateDashedLines("ribbon", {
+                        //             points: pathPoints, updatable: true}, this._scene);
+                        //     }
+                            // var pathPoints = this.navigationPlugin.computePath(
+                            //     this._crowd.getAgentPosition(agents[0]), 
+                            //     this.navigationPlugin.getClosestPoint(end_position));
+
+                            //     pathLine = MeshBuilder.CreateDashedLines("ribbon", {
+                            //         points: pathPoints, updatable: true, 
+                            //         instance: pathLine}, this._scene);
+                }
+        })
+    }
+
+    /**
+     * 
+     * @param index 
+     * @returns 
+     */
+    private getMeshByAgentIndex(index){
+        const meshes = this._scene.meshes.filter(mesh=>{
+            if(mesh.metadata && mesh.metadata.hasOwnProperty("agentIndex")){
+                if(mesh.metadata.agentIndex === index){
+                    console.log("found mesh here **********");
+                    return mesh;
+                }
+            }
+        });
+        console.log(meshes);
+        return meshes[0];
+    }
+    private _pickedPosition(){
+        const pos = this._scene.pick(this._scene.pointerX,this._scene.pointerY);
+        if(pos.hit){
+            return pos.pickedPoint;
+        }
+        return null;
+    }
+
     private _createFootCircle(){
         // Create a particle system
         var particleSystem = new ParticleSystem("particles", 1000, this._scene);
@@ -234,8 +463,8 @@ export default class ActionStudy{
 
         this._enemies.push(new Enemy("a",this._engine,this._camera,this._scene) as never);
         this._enemies.push(new Enemy("b",this._engine,this._camera,this._scene) as never);
-        this._enemies.push(new Enemy("c",this._engine,this._camera,this._scene) as never);
-        this._enemies.push(new Enemy("d",this._engine,this._camera,this._scene) as never);
+        // this._enemies.push(new Enemy("c",this._engine,this._camera,this._scene) as never);
+        // this._enemies.push(new Enemy("d",this._engine,this._camera,this._scene) as never);
 
         const result = await SceneLoader.ImportMeshAsync(
             null, 
@@ -326,7 +555,6 @@ export default class ActionStudy{
 
         let h2_sword,h1_sword;
         this._player.getChildMeshes().forEach(mesh=>{
-            
             if(mesh.name === '2H_Sword'){
                 mesh.checkCollisions = true;
                 h2_sword = mesh;

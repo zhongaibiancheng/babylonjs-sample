@@ -128,6 +128,7 @@ export default class Enemy{
         player.scaling.setAll(2);
 
         player.position = new Vector3(0,-0.7,0);
+        
         const outer = MeshBuilder.CreateBox("_enemey_"+this._id,{
             height:1.4,
             width:0.6,
