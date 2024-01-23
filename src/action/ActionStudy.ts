@@ -82,8 +82,11 @@ export default class ActionStudy{
         const axis =  new AxesViewer(this._scene, 10);
 
         // this._setPhysics();
+        // this._main();
+    }
 
-        this._createPhysicsWorld();
+    public async create(){
+        await this._createPhysicsWorld();
 
         this._createInputMap();
     
@@ -92,12 +95,8 @@ export default class ActionStudy{
         // this._createWalls();
 
         //自动计算路径 前提是需要正确的初始化插件（包括所有的mesh，用于计算路径的时候跳过）
-        this._createNavMesh(this._enemies);
-
-        
-        this._main();
+        await this._createNavMesh(this._enemies);
     }
-
     private _createWalls(){
         const wall = MeshBuilder.CreateBox("wall",{
             width:16,
@@ -161,6 +160,7 @@ export default class ActionStudy{
             }
         });
     }
+
     private async _setPhysics(){
         const physics = new CannonJSPlugin(null, 10, CANNON);
         this._scene.enablePhysics(new Vector3(0, -9.8, 0), physics);
@@ -171,7 +171,8 @@ export default class ActionStudy{
     private _createAnimationLabel(animations:Array<AnimationGroup>){
         const div = document.createElement("div");
         div.style.position = "fixed";
-        div.style.display="flex";
+        // div.style.display="flex";
+        div.style.display = "none";
         div.style.flexWrap="wrap";
         div.style.minHeight="300px";
         div.style.maxHeight="300px";
@@ -225,6 +226,7 @@ export default class ActionStudy{
 
     private async _createNavMesh(enemies){
         await this._scene.whenReadyAsync();
+
         // initialize the recast plugin
         this.navigationPlugin = new RecastJSPlugin(await (Recast as any)());
         var navmeshParameters = {
@@ -256,34 +258,36 @@ export default class ActionStudy{
             radius: 0.1,
             height: 0.2,
             maxAcceleration: 4.0,
-            maxSpeed: 3.0,
+            maxSpeed: 2.0,
             collisionQueryRange: 0.5,
             pathOptimizationRange: 0.0,
             separationWeight: 1.0
         };
 
-        const result = await SceneLoader.ImportMeshAsync(null,
-            "./dungeon/models/",
-            "boy.glb",
-            this._scene);
+        // const result = await SceneLoader.ImportMeshAsync(null,
+        //     "./dungeon/models/",
+        //     "boy.glb",
+        //     this._scene);
         
-        const player = result.meshes[0] as Mesh;
+        // const player = result.meshes[0] as Mesh;
 
-        player.scaling.setAll(2);
+        // player.scaling.setAll(2);
 
-        const helper = new AxesViewer(this._scene,3);
-        helper.xAxis.parent = player;
-        helper.yAxis.parent = player;
-        helper.zAxis.parent = player;
+        // const helper = new AxesViewer(this._scene,3);
+        // helper.xAxis.parent = player;
+        // helper.yAxis.parent = player;
+        // helper.zAxis.parent = player;
 
         for(let i=0;i<enemies.length;i++){
             // const agentCube = MeshBuilder.CreateBox("box",{size:0.2},this._scene);
             var randomPos = this.navigationPlugin.getRandomPointAround(
-                new Vector3(-2.0, 0.1, -1.8), 0.5);
+                new Vector3(-.7, 0.1, -0.3), 0.5);
 
-            // const agentCube = enemies[i].player;
-            const agentCube = player.clone();
-            // const randomPos = agentCube.getAbsolutePosition();
+            // var randomPos = this.navigationPlugin.getRandomPointAround(enemies[i].player.getAbsolutePosition(),0.5);
+            // var randomPos = enemies[i].player.getAbsolutePosition();
+
+            const agentCube = enemies[i].player;
+            // const agentCube = player.clone();
 
             var transform = new TransformNode("test_"+i);
             agentCube.parent = transform;
@@ -292,100 +296,187 @@ export default class ActionStudy{
             agentCube.metadata = {agentIndex:agentIndex};
         }
 
-        player.dispose();
+        // player.dispose();
 
+        let _agents = this._crowd.getAgents();
+
+        let pathLine;
         this._scene.onPointerObservable.add(pointerInfo=>{
             switch(pointerInfo.type){
                 case PointerEventTypes.POINTERDOWN:
-                        const mesh = this.getMeshByAgentIndex(0);
+                    const picked = this._pickedPosition();
+                    if(picked){
+                        const end_position = picked;
+                        let agents = this._crowd.getAgents();
+                        
+                        for(let i=0;i<agents.length;i++){
+                            const result = this.getMeshByAgentIndex(agents[i]) as any;
 
-                        // mesh.computeWorldMatrix(true);
+                            const mesh = result.player;
+                            this._toward(mesh,end_position);
 
-    
-                        // MeshBuilder.CreateLines("line",{
-                        //     points:[mesh.getAbsolutePosition(),rotatedVector]
-                        // });
-                        MeshBuilder.CreateLines("line",{
-                            points:[mesh.getAbsolutePosition(),Vector3.Zero()]
-                        });
-                        const forward = mesh.forward.normalize();
-                        const pos = mesh.getAbsolutePosition().normalize();
+                            this._crowd.agentGoto(
+                                agents[i],
+                                this.navigationPlugin.getClosestPoint(end_position)
+                                // end_position
+                                );
 
-                        // 计算点积
-var dotProduct = Vector3.Dot(pos,forward);
+                            const player = result.mesh;
+                            player.walk();
 
-// 计算两个向量的模
-var magnitudeVector1 = forward.length();
-var magnitudeVector2 = pos.length();
+                            var pathPoints = this.navigationPlugin.computePath(
+                                this._crowd.getAgentPosition(
+                                    agents[0]), 
+                                this.navigationPlugin.getClosestPoint(end_position));
 
-// 计算夹角（以弧度为单位）
-var angleInRadians = Math.acos(dotProduct / (magnitudeVector1 * magnitudeVector2));
-
-// 如需将弧度转换为度，可以使用以下转换
-var angleInDegrees = angleInRadians * (180 / Math.PI);
-console.log(angleInRadians,angleInDegrees,mesh.forward.normalize());
-// mesh.rotation.y += angleInRadians;
-mesh.rotationQuaternion = Quaternion.RotationAxis(Axis.Y, angleInRadians);
-
-
-                        MeshBuilder.CreateLines("line",{
-                            points:[mesh.getAbsolutePosition(),forward.scale(5)]
-                        });
-                        break;
-                        // const picked = this._pickedPosition();
-                        // if(picked){
-                        //     const end_position = picked;
-
-                        //     let agents = this._crowd.getAgents();
-                        //     for(let i=0;i<agents.length;i++){
-                        //         this._crowd.agentGoto(
-                        //             agents[i], 
-                        //             this.navigationPlugin.getClosestPoint(end_position));
-                        //         // var randomPos = this.navigationPlugin.getRandomPointAround(end_position, 1.0);
-                        //         // 4. 计算朝向
-                        //         var direction = end_position.subtract(this._crowd.getAgentPosition(agents[i])).normalize();
-                        //         console.log(direction);
-
-                        //         // 5. 旋转模型
-                        //         var yaw = Math.atan2(direction.z, direction.x);
-                        //         // var pitch = -Math.atan2(direction.y, Math.sqrt(direction.x * direction.x + direction.z * direction.z));
-                        //         this._crowd.transforms[i].rotationQuaternion.multiply(
-                        //         Quaternion.RotationYawPitchRoll(yaw, 0, 0));
-                                
-                        //         var pathPoints = this.navigationPlugin.computePath(
-                        //                 this._crowd.getAgentPosition(agents[i]), 
-                        //                 this.navigationPlugin.getClosestPoint(end_position));
-
-                        //         MeshBuilder.CreateDashedLines("ribbon", {
-                        //             points: pathPoints, updatable: true}, this._scene);
-                        //     }
-                            // var pathPoints = this.navigationPlugin.computePath(
-                            //     this._crowd.getAgentPosition(agents[0]), 
-                            //     this.navigationPlugin.getClosestPoint(end_position));
-
-                            //     pathLine = MeshBuilder.CreateDashedLines("ribbon", {
-                            //         points: pathPoints, updatable: true, 
-                            //         instance: pathLine}, this._scene);
+                            // pathLine = MeshBuilder.CreateDashedLines("ribbon", {points: pathPoints, updatable: true, instance: pathLine},this._scene);
+                            MeshBuilder.CreateDashedLines("ribbon", {points: pathPoints, updatable: true},this._scene);
+                            // // this._moveToward(mesh,pathPoints);
+                            // 监听角色位置变化来停止动画（示例代码，需要根据实际情况调整）
+                            var myObserver = this._scene.onBeforeRenderObservable.add(() => {
+                                if (Vector3.Distance(mesh.getAbsolutePosition(), end_position) < 1) {
+                                    player.idle();
+                                    this._scene.onBeforeRenderObservable.remove(myObserver);
+                                }
+                            });
+                        }       
+                    }
+                    break;
                 }
-        })
+        });
     }
 
+    private _moveToward(mesh,points){
+        for(let i=1;i<points.length;i++){
+            this._toward(mesh,points[i]);
+            mesh.position = points[i].clone();
+        }
+    }
+    private _toward(mesh,end_position){
+        // MeshBuilder.CreateLines("_0_",{
+        //     points:[Vector3.Zero(),mesh.getAbsolutePosition()]
+        // })
+        // MeshBuilder.CreateLines("_1_",{
+        //     points:[Vector3.Zero(),end_position]
+        // })
+        // MeshBuilder.CreateLines("_2_",{
+        //     points:[mesh.getAbsolutePosition(),end_position]
+        // })
+        // console.log(mesh);
+        const forward = mesh.forward;
+        const absolute_pos = mesh.getAbsolutePosition();
+
+        // const pos = end_position.subtract(absolute_pos);
+        const pos = absolute_pos.subtract(end_position);
+
+        // 计算点积
+        var dotProduct = Vector3.Dot(forward,pos);
+
+        // 计算两个向量的模
+        var magnitudeVector1 = forward.length();
+        var magnitudeVector2 = pos.length();
+
+        // 计算夹角（以弧度为单位）
+        // var angleInRadians = Math.acos(dotProduct / (magnitudeVector1 * magnitudeVector2));
+
+        var angleInRadians = this._calculateAngleBetweenVectors(forward,pos);
+        // 如需将弧度转换为度，可以使用以下转换
+        // var angleInDegrees = angleInRadians * (180 / Math.PI);
+
+        if(this._areVectorsOpposite(end_position.subtract(absolute_pos),absolute_pos.add(forward))){
+            angleInRadians = angleInRadians *(-1);
+        }
+        const quaternion = Quaternion.RotationAxis(Axis.Y, angleInRadians);
+
+        if(mesh.rotationQuaternion.equals(Quaternion.Zero())){
+            console.log(quaternion);
+            mesh.rotationQuaternion = quaternion;
+        }else{
+            mesh.rotationQuaternion = mesh.rotationQuaternion.multiply(quaternion);
+        }
+        // console.log(mesh.rotationQuaternion);
+    }
+
+    /**
+     * 顺时针方向上，向量A是在向量B的前面还是后面
+     * @param vectorA 
+     * @param vectorB 
+     * @returns 
+     * true：向量A在向量B后面的时候
+     * false：向量A在向量B前面的时候
+     */
+    private _areVectorsOpposite(vectorA,vectorB):Boolean{
+        console.log(vectorA,vectorB);
+
+        var vectorAB = vectorB.subtract(vectorA);
+
+        var referenceVector = new Vector3(1, 0, 0);
+
+        var crossProduct = Vector3.Cross(vectorAB, referenceVector);
+
+        if (crossProduct.y > 0) {
+            console.log("向量A在向量B的顺时针方向上");
+            return false;
+        } else if (crossProduct.y < 0) {
+            console.log("向量A在向量B的逆时针方向上");
+            return true;
+        } else {
+            console.log("向量A和向量B共线");
+            return false;
+        }
+    }
+    // private _areVectorsOpposite(vec1, vec2) {
+    //     // 首先将向量标准化
+    //     var normVec1 = vec1.normalize();
+    //     var normVec2 = vec2.normalize();
+    
+    //     // 计算点积
+    //     var dotProduct = Vector3.Dot(normVec1, normVec2);
+    
+    //     console.log("计算点积计算点积="+dotProduct);
+    //     // 如果点积接近 -1，则向量大致相反方向
+    //     return dotProduct < -0.999;
+    // }
+
+    private _calculateAngleBetweenVectors(vec1, vec2) {
+        // 计算点积
+        var dotProduct = Vector3.Dot(vec1.normalize(), vec2.normalize());
+    
+        // 计算夹角（以弧度为单位）
+        var angle = Math.acos(dotProduct);
+    
+        // 如果需要角度值，可以将弧度转换为度
+        // var angleDegrees = angle * 180 / Math.PI;
+    
+        return angle;
+    }
+    
     /**
      * 
      * @param index 
      * @returns 
      */
     private getMeshByAgentIndex(index){
-        const meshes = this._scene.meshes.filter(mesh=>{
-            if(mesh.metadata && mesh.metadata.hasOwnProperty("agentIndex")){
-                if(mesh.metadata.agentIndex === index){
-                    console.log("found mesh here **********");
-                    return mesh;
-                }
-            }
-        });
-        console.log(meshes);
-        return meshes[0];
+        // const meshes = this._scene.meshes.filter(mesh=>{
+        //     if(mesh.metadata && mesh.metadata.hasOwnProperty("agentIndex")){
+        //         if(mesh.metadata.agentIndex === index){
+        //             return mesh;
+        //         }
+        //     }
+        // });
+        // if(meshes && meshes.length >0){
+        //     return meshes[0];
+        // }else{
+        //     return null;
+        // }
+        const enemy = this._enemies[index];
+        const player= enemy.player;
+        const mesh = enemy;
+
+        return {
+            player:player,
+            mesh:mesh
+        }
     }
     private _pickedPosition(){
         const pos = this._scene.pick(this._scene.pointerX,this._scene.pointerY);
@@ -462,9 +553,7 @@ mesh.rotationQuaternion = Quaternion.RotationAxis(Axis.Y, angleInRadians);
         const scaling = 1;
 
         this._enemies.push(new Enemy("a",this._engine,this._camera,this._scene) as never);
-        this._enemies.push(new Enemy("b",this._engine,this._camera,this._scene) as never);
-        // this._enemies.push(new Enemy("c",this._engine,this._camera,this._scene) as never);
-        // this._enemies.push(new Enemy("d",this._engine,this._camera,this._scene) as never);
+        // this._enemies.push(new Enemy("b",this._engine,this._camera,this._scene) as never);
 
         const result = await SceneLoader.ImportMeshAsync(
             null, 
@@ -567,27 +656,27 @@ mesh.rotationQuaternion = Quaternion.RotationAxis(Axis.Y, angleInRadians);
 
         this._scene.onBeforeRenderObservable.add(()=>{
             this._enemies.forEach(enemy=>{
-                if(h1_sword.intersectsMesh(enemy.player)&&this._attacking){
-                    const message = new CustomEvent("damageMessage",
-                    {
-                        detail:{
-                            objB:enemy,
-                            damageVal:10
-                        }
-                    });
-                    window.dispatchEvent(message);
-                    this._attacking = false;
-                }else if(h2_sword.intersectsMesh(enemy.player)&&this._attacking){
-                    const message = new CustomEvent("damageMessage",
-                    {
-                        detail:{
-                            objB:enemy,
-                            damageVal:5
-                        }
-                    });
-                    window.dispatchEvent(message);
-                    this._attacking = false;
-                }
+                // if(h1_sword.intersectsMesh(enemy.player)&&this._attacking){
+                //     const message = new CustomEvent("damageMessage",
+                //     {
+                //         detail:{
+                //             objB:enemy,
+                //             damageVal:10
+                //         }
+                //     });
+                //     window.dispatchEvent(message);
+                //     this._attacking = false;
+                // }else if(h2_sword.intersectsMesh(enemy.player)&&this._attacking){
+                //     const message = new CustomEvent("damageMessage",
+                //     {
+                //         detail:{
+                //             objB:enemy,
+                //             damageVal:5
+                //         }
+                //     });
+                //     window.dispatchEvent(message);
+                //     this._attacking = false;
+                // }
             });
         })
         const animations = result.animationGroups;
@@ -612,7 +701,7 @@ mesh.rotationQuaternion = Quaternion.RotationAxis(Axis.Y, angleInRadians);
 
     }
 
-    _main():void{
+    public main():void{
         this._engine.runRenderLoop(()=>{
             this._scene.render();
         })

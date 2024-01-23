@@ -31,9 +31,12 @@ export default class Enemy{
 
     _idle:AnimationGroup;
 
+    _walking:AnimationGroup;
+
     _damageText:TextBlock;
     _damagePlane:Mesh;
 
+    _currentAnimation:AnimationGroup;
     constructor(name:string,engine:Engine,camera:Camera,scene:Scene){
         this._id = this._generateId();
         this._name = name;
@@ -137,11 +140,12 @@ export default class Enemy{
         outer.checkCollisions = true;
         player.parent = outer;
 
-        outer.position = new Vector3(
-            this.getRandomInt(-10,10),
-            0.7,
-            this.getRandomInt(-20,20));
+        // outer.position = new Vector3(
+        //     this.getRandomInt(-2,2),
+        //     0.7,
+        //     this.getRandomInt(-20,20));
         
+        outer.position.y = 0.7;
         outer.rotationQuaternion = Quaternion.Zero();
 
         this._player = outer;
@@ -150,8 +154,10 @@ export default class Enemy{
         // this._player.checkCollisions = true;
         
         this._animations = result.animationGroups;
-
+// console.log(this._animations);
         this._idle = this._animations[18];
+        this._walking = this._animations[9];
+
         this._deathAnimation = this._animations[4];
 
         this._idle.play(true);
@@ -159,6 +165,35 @@ export default class Enemy{
         this._createHealthBar();
 
         this._createDamageBar();
+    }
+
+    public walk(){
+        this._playAnimation("walking");
+    }
+    public idle(){
+        this._playAnimation("idle");
+    }
+    private _playAnimation(animation){
+        let ani;
+        if(animation=== "walking"){
+            // this._walking.play(true);
+            ani = this._walking;
+        }else if(animation === "idle"){
+            // this._idle.play(true);
+            ani = this._idle;
+        }
+
+        if(this._currentAnimation){
+            if(this._currentAnimation !== ani){
+                console.log("stop animation *******");
+                this._currentAnimation.stop();
+            }
+            this._currentAnimation = ani;
+        }else{
+            this._currentAnimation = ani;
+        }
+        // this._currentAnimation.restart();
+        this._currentAnimation.play(true)
     }
 
     private _createDamageBar(){

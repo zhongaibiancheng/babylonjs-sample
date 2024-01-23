@@ -63,4 +63,9 @@
 // const compound = new Compound();
 
 import ActionStudy from './action/ActionStudy';
-const compound = new ActionStudy();
+async function create(){
+    const compound = new ActionStudy();
+    await compound.create();
+    compound.main();
+}
+create();
